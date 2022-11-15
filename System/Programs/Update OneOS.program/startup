@@ -120,7 +120,8 @@ function downloadBlob(v)
 
         local tries, f = 0
         repeat 
-			f = http.get(('https://raw.github.com/'..Settings.GitHubUsername..'/'..Settings.GitHubRepoName..'/'..latestReleaseTag..Settings.InstallPath..v.path):gsub(' ','%%20'))
+			local temp = ('https://raw.github.com/'..Settings.GitHubUsername..'/'..Settings.GitHubRepoName..'/'..latestReleaseTag..Settings.InstallPath..v.path):gsub(' ','%%20')
+			f = http.get(temp)
                 if not f then sleep(5) end
                 tries = tries + 1
         until tries > 5 or f
