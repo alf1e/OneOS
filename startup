@@ -330,7 +330,10 @@ function BootMenu()
 			removeFolder('')
 			
 		end},
-		{'Use CraftOS', function()end}
+		{'Use CraftOS', function()end},
+		{'Update', function ()
+			os.run(getfenv(), '/System/Programs/Updater OneOS.program/startup')
+		end}
 	}
 
 	local selected = 1
