@@ -59,7 +59,7 @@ end)
 
 bedrock.EventHandler = function(self)
 	if Current.Programs then
-		return false
+		goto continue
 	else
 	
 		for i, program in ipairs(Current.Programs) do
@@ -69,6 +69,7 @@ bedrock.EventHandler = function(self)
 			program.EventQueue = {}
 		end
 	end
+	::continue::
 	local event = { os.pullEventRaw() }
 
 	local s = 'Event: '
