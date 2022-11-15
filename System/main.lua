@@ -77,7 +77,12 @@ bedrock.EventHandler = function(self)
 			e(self, unpack(event))
 		end
 	else
-		Current.Program:QueueEvent(unpack(event))
+		if Current.Program then
+			Current.Program:QueueEvent(unpack(event))
+		else
+			Log:w('Attempted to Queue event on an unopened program. Dropping to desktop.')
+			Current.Programs[1]:QueueEvent(unpack(event))
+		end
 	end
 end
 
