@@ -58,16 +58,11 @@ bedrock:RegisterEvent('modem_message', function(self, event, side, channel, repl
 end)
 
 bedrock.EventHandler = function(self)
-	if Current.Programs then
-		return
-	else
-	
-		for i, program in ipairs(Current.Programs) do
-			for i, event in ipairs(program.EventQueue) do
-				program:Resume(unpack(event))
-			end
-			program.EventQueue = {}
+	for i, program in ipairs(Current.Programs) do
+		for i, event in ipairs(program.EventQueue) do
+			program:Resume(unpack(event))
 		end
+		program.EventQueue = {}
 	end
 	local event = { os.pullEventRaw() }
 
