@@ -669,7 +669,7 @@ function Draw()
 Drawing.Clear(colours.white)
 if Current.StatusScreen then
 Drawing.DrawCharactersCenter(1,-2,nil,nil,Current.HeaderText,colours.blue,colours.white)
-Drawing.DrawCharactersCenter(1,-1,nil,nil,'by oeed',colours.lightGrey,colours.white)
+Drawing.DrawCharactersCenter(1,-1,nil,nil,'by alf1e',colours.lightGrey,colours.white)
 Drawing.DrawCharactersCenter(1,1,nil,nil,Current.StatusText,Current.StatusColour,colours.white)
 end
 if Current.ButtonOne then

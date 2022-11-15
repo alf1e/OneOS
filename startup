@@ -206,7 +206,7 @@ function LoadingScreen()
 		x = math.ceil((screenWidth - 23) / 2) + 1
 		y = (screenHeight - 8) / 2 + 1
 
-		local text = 'OneOS by oeed'
+		local text = 'OneOS by alf1e'
 		term.setCursorPos(math.ceil((screenWidth - #text) / 2) + 1, y + 5)
 		term.setTextColour(colours.grey)
 		term.write(text)

@@ -204,7 +204,7 @@ function CheckAutoUpdate(arg)
 		if checkAutoUpdateArg then
 			bedrock:DisplayAlertWindow("Update OneOS", "Checking for updates, this may take a moment.", {'Ok'})
 		end
-		http.request('https://api.github.com/repos/oeed/OneOS/releases#')
+		http.request('https://api.github.com/repos/alf1e/OneOS/releases#')
 	elseif arg then
 		Log.e('Update failed. HTTP is not enabled.')
 		bedrock:DisplayAlertWindow("HTTP Not Enabled!", "Turn on the HTTP API to update.", {'Ok'})		
@@ -238,7 +238,7 @@ function SematicVersionIsNewer(version, otherVersion)
 end
 
 function AutoUpdateFail(self, event, url, data)
-	if url == 'https://api.github.com/repos/oeed/OneOS/releases#' then
+	if url == 'https://api.github.com/repos/alf1e/OneOS/releases#' then
 		Log.w('Auto update failed. (http_failure)')
 		if checkAutoUpdateArg then
 			if bedrock.Window then
@@ -252,7 +252,7 @@ function AutoUpdateFail(self, event, url, data)
 end
 
 function AutoUpdateResponse(self, event, url, data)
-	if url == 'https://api.github.com/repos/oeed/OneOS/releases#' then
+	if url == 'https://api.github.com/repos/alf1e/OneOS/releases#' then
 		os.loadAPI('/System/JSON')
 		if not data then
 			Log.w('Auto update failed. (no)')

@@ -347,7 +347,7 @@ program:Run(function()
 		term.setTextColor(colours.white)
 		term.clear()
 		term.setCursorPos(1, 1)
-		print('Thanks for using Quest Server by oeed')
+		print('Thanks for using Quest Server by alf1e')
 		program:Quit()
 	end
 end)

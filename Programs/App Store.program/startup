@@ -599,7 +599,7 @@ term.clear()
 term.setCursorPos(1,1)
 print=_print
 print('Thanks for using the App Store!')
-print('(c) oeed 2013 - 2014')
+print('(c) alf1e 2013 - 2014')
 end)
 end
 end
@@ -767,7 +767,7 @@ print('Your program has been uploaded.')
 print('It\'s unique ID is: '..t:sub(3))
 print('Go to ccappstore.com/submit/ and select "In Game" as the upload option and enter the above code.')
 else
-printError('The server rejected the file. Try again or PM oeed. ('..e.getResponseCode()..' error)')
+printError('The server rejected the file. Try again or PM alf1e. ('..e.getResponseCode()..' error)')
 end
 else
 printError('Could not submit file.')

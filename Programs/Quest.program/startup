@@ -395,7 +395,7 @@ local defaultSettings = {
 local function quit()
 	term.setBackgroundColour(colors.black)
 	shell.run('clear')
-	print('Thanks for using Quest, created by oeed.')
+	print('Thanks for using Quest, created by alf1e.')
 	program:Quit()
 end
 

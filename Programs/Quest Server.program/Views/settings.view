@@ -41,7 +41,7 @@
       ["X"]=3,
       ["Width"]="100%,-4",
       ["Type"]="Label",
-      ["Text"]="Quest and Quest Server were made by oeed using Bedrock, the source of all awesomeness. If you find a bug or have any questions give me a PM or post on the forum topic.",
+      ["Text"]="Quest and Quest Server were made by alf1e using Bedrock, the source of all awesomeness. If you find a bug or have any questions give me a PM or post on the forum topic.",
       ["TextColour"]=128
     },
   },

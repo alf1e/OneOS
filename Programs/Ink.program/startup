@@ -2470,7 +2470,7 @@ PrintCentered("Thanks for using Ink!",(Drawing.Screen.Height/2)-1)
 term.setTextColour(colours.lightGrey)
 PrintCentered("Word Proccessor for ComputerCraft",(Drawing.Screen.Height/2))
 term.setTextColour(colours.white)
-PrintCentered("(c) oeed 2014",(Drawing.Screen.Height/2)+3)
+PrintCentered("(c) alf1e 2014",(Drawing.Screen.Height/2)+3)
 term.setCursorPos(1,Drawing.Screen.Height)
 error('',0)
 end
