@@ -61,7 +61,7 @@ end
 subTitle = 'Determining Latest Version'
 Draw()
 local releases = downloadJSON('https://api.github.com/repos/'..Settings.GitHubUsername..'/'..Settings.GitHubRepoName..'/releases')
-local latestReleaseTag = nil
+local latestReleaseTag = releases[1].tag_name
 for i, v in ipairs(releases) do
 	if not v.prerelease then
 		latestReleaseTag = v.tag_name
