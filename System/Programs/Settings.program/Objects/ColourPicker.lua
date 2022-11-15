@@ -1,1 +1,0 @@
-ALIAS/System/Shared Objects/ColourPicker.lua

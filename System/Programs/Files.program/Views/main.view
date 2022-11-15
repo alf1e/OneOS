@@ -1,74 +1,84 @@
 {
-	Children = {
-		{
-			X = 1,
-			Y = 1,
-			Width = '100%',
-			Height = 3,
-			BackgroundColour = 'lightGrey',
-			Type = 'View',
-			Name = 'Toolbar',
-			Children = {
-				{
-					X = 2,
-					Y = 2,
-					Type = 'Button',
-					Name = 'BackButton',
-					Text = '<',
-					TextColour = 'grey',
-					BackgroundColour = 'white',
-					Enabled = false
-				},
-				{
-					X = 6,
-					Y = 2,
-					Type = 'Button',
-					Name = 'ForwardButton',
-					Text = '>',
-					TextColour = 'grey',
-					BackgroundColour = 'white',
-					Enabled = false
-				},
-				{
-					X = 10,
-					Y = 2,
-					Type = 'Button',
-					Text = 'Up',
-					Name = 'UpButton',
-					TextColour = 'grey',
-					BackgroundColour = 'white'
-				},
-				{
-					X = 16,
-					Y = 2,
-					Type = 'TextBox',
-					Name = 'PathTextBox',
-					Text = '',
-					Width = '100%,-16',
-					TextColour = 'grey',
-					BackgroundColour = 'white'
-				},
-				-- {
-				-- 	X = 1,
-				-- 	Y = 3,
-				-- 	Type = 'Separator',
-				-- 	Character = '_',
-				-- 	Colour = 'lightGrey',
-				-- 	Width = '100%',
-				-- }
-			}
-		},
-
-		{
-			X = 1,
-			Y = 4,
-			Width = '100%',
-			Height = '100%,-3',
-			BackgroundColour = 'transparent',
-			Type = 'CollectionView',
-			Name = 'FilesCollectionView',
-			Items = {}
-		}
-	},
-	BackgroundColour = 'white',
+  ["Children"]={
+    [1]={
+      ["Y"]=1,
+      ["X"]=1,
+      ["Name"]="Toolbar",
+      ["Type"]="View",
+      ["InheritView"]="toolbar"
+    },
+    [2]={
+      ["Y"]=4,
+      ["X"]=12,
+      ["Height"]="100%,-3",
+      ["Name"]="Separator",
+      ["Type"]="Separator",
+      ["Colour"]=256
+    },
+    [3]={
+      ["Y"]=4,
+      ["X"]=1,
+      ["Height"]="100%,-3",
+      ["Width"]=12,
+      ["Name"]="Sidebar",
+      ["Type"]="ListView",
+      ["TextColour"]=128,
+      ["BackgroundColour"]=0,
+      ["TopMargin"]=1,
+      ["Items"]={
+        ["Places"]={
+          {["Text"] = 'Desktop', ["Path"] = '/Desktop/'},
+          {["Text"] = 'Documents', ["Path"] = '/Desktop/Documents/'},
+          {["Text"] = 'Programs', ["Path"] = '/Programs/'},
+          {["Text"] = 'Computer', ["Path"] = '/'},
+        },
+        ["Peripherals"]={}
+      },
+    },
+    [4]={
+      ["Y"]=4,
+      ["X"]=14,
+      ["Width"]="100%,-12",
+      ["Name"]="PathLabel",
+      ["Type"]="Label",
+      ["TextColour"]=256,
+      ["Text"]=""
+    },
+    [5]={
+      ["Y"]=5,
+      ["X"]=13,
+      ["Height"]="100%,-4",
+      ["Width"]="100%,-12",
+      ["Name"]="FilesCollectionView",
+      ["Type"]="CollectionView",
+      ["TextColour"]=128,
+      ["BackgroundColour"]=0,
+      ["Items"]={}
+    },
+    [6]={
+      ["Y"]=5,
+      ["X"]=13,
+      ["Height"]="100%,-4",
+      ["Width"]="100%,-12",
+      ["Name"]="FilesListView",
+      ["Type"]="ListView",
+      ["TextColour"]=128,
+      ["BackgroundColour"]=0,
+      ["Items"]={}
+    },
+    [7]={
+      ["Y"]=5,
+      ["X"]=13,
+      ["Height"]="100%,-4",
+      ["Width"]="100%,-12",
+      ["Name"]="FilesPeripheralView",
+      ["Type"]="PeripheralView",
+      ["TextColour"]=128,
+      ["BackgroundColour"]=0,
+      ["Items"]={}
+    },
+  },
+  ["BackgroundColour"]=1,
+  ["ToolBarColour"]=256,
+  ["ToolBarTextColour"] = 1
 }

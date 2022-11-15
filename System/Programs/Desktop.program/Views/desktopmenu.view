@@ -1,23 +1,24 @@
 {
-  Type = 'Menu',
-  Children = {
-    {
-      Name = 'NewFileMenuItem',
-      Type = 'MenuItem',
-      Text = 'New File...'
+  ["Type"]="Menu",
+  ["Children"]={
+    [1]={
+      ["Name"]="NewFolderMenuItem",
+      ["Type"]="Button",
+      ["Text"]="New Folder..."
     },
-    {
-      Name = 'NewFolderMenuItem',
-      Type = 'MenuItem',
-      Text = 'New Folder...'
+    [2]={
+      ["Name"]="NewFileMenuItem",
+      ["Type"]="Button",
+      ["Text"]="New File..."
     },
-    {
-      Type = 'Separator'
+    [3]={
+      ["Name"]="Separator",
+      ["Type"]="Separator"
     },
-    {
-      Name = 'RefreshMenuItem',
-      Type = 'MenuItem',
-      Text = 'Refresh'
+    [4]={
+      ["Name"]="RefreshMenuItem",
+      ["Type"]="Button",
+      ["Text"]="Refresh"
     },
   },
 }

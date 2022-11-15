@@ -1,90 +1,92 @@
 {
-  Type = 'Menu',
-  Children = {
-    {
-      Name = 'OpenMenuItem',
-      Type = 'MenuItem',
-      Text = 'Open'
+  ["Type"]="Menu",
+  ["Children"]={
+    [1]={
+      ["Name"]="OpenMenuItem",
+      ["Type"]="Button",
+      ["Text"]="Open"
     },
-    {
-      Name = 'ViewBundleMenuItem',
-      Type = 'MenuItem',
-      Text = 'View Bundle Content'
+    [2]={
+      ["Name"]="ViewProgramContentMenuItem",
+      ["Type"]="Button",
+      ["Text"]="View Program Content"
     },
-    {
-      Name = 'OpenArgsMenuItem',
-      Type = 'MenuItem',
-      Text = 'Open With Arguments...'
+    [3]={
+      ["Name"]="OpenWithArgsMenuItem",
+      ["Type"]="Button",
+      ["Text"]="Open With Arguments..."
     },
-    {
-      Name = 'OpenWithMenuItem',
-      Type = 'MenuItem',
-      Text = 'Open With...'
+    [4]={
+      ["Name"]="OpenWithMenuItem",
+      ["Type"]="Button",
+      ["Text"]="Open With..."
     },
-    {
-      Type = 'Separator'
+    [5]={
+      ["Name"]="Separator",
+      ["Type"]="Separator"
     },
-    {
-      Name = 'TransmitMenuItem',
-      Type = 'MenuItem',
-      Text = 'Transmit'
+    [6]={
+      ["Name"]="TransmitMenuItem",
+      ["Type"]="Button",
+      ["Text"]="Transmit"
     },
-    {
-      Name = 'CreatePackageMenuItem',
-      Type = 'MenuItem',
-      Text = 'Create Package'
+    [7]={
+      ["Name"]="CreatePackageMenuItem",
+      ["Type"]="Button",
+      ["Text"]="Create Package"
     },
-    {
-      Type = 'Separator'
+    [8]={
+      ["Name"]="Separator",
+      ["Type"]="Separator"
     },
-    {
-      Name = 'RenameMenuItem',
-      Type = 'MenuItem',
-      Text = 'Rename...'
+    [9]={
+      ["Name"]="RenameMenuItem",
+      ["Type"]="Button",
+      ["Text"]="Rename..."
     },
-    {
-      Name = 'DeleteMenuItem',
-      Type = 'MenuItem',
-      Text = 'Delete...'
+    [10]={
+      ["Name"]="DeleteMenuItem",
+      ["Type"]="Button",
+      ["Text"]="Delete..."
     },
-    {
-      Name = 'AddToFavouritesMenuItem',
-      Type = 'MenuItem',
-      Text = 'Add To Favourites'
+    [11]={
+      ["Name"]="AddToDesktopMenuItem",
+      ["Type"]="Button",
+      ["Text"]="Add To Desktop"
     },
-    {
-      Name = 'AddToDesktopMenuItem',
-      Type = 'MenuItem',
-      Text = 'Add To Desktop'
+    [12]={
+      ["Name"]="Separator",
+      ["Type"]="Separator"
     },
-    {
-      Name = 'MakeAliasMenuItem',
-      Type = 'MenuItem',
-      Text = 'Make Alias'
+    [13]={
+      ["Name"]="CopyMenuItem",
+      ["Type"]="Button",
+      ["Text"]="Copy"
     },
-    {
-      Name = 'ResolveAliasMenuItem',
-      Type = 'MenuItem',
-      Text = 'Show Real File'
+    [14]={
+      ["Name"]="CutMenuItem",
+      ["Type"]="Button",
+      ["Text"]="Cut"
     },
-    {
-      Type = 'Separator'
+    [15]={
+      ["Name"]="PasteMenuItem",
+      ["Type"]="Button",
+      ["Text"]="Paste",
+      ["Enabled"]=false
     },
-    {
-      Name = 'CopyMenuItem',
-      Type = 'MenuItem',
-      Text = 'Copy'
+    [16]={
+      ["Name"]="Separator",
+      ["Type"]="Separator"
     },
-    {
-      Name = 'CutMenuItem',
-      Type = 'MenuItem',
-      Text = 'Cut'
+    [17]={
+      ["Name"]="NewFolderMenuItem",
+      ["Type"]="Button",
+      ["Text"]="New Folder..."
     },
-    {
-      Name = 'PasteMenuItem',
-      Type = 'MenuItem',
-      Text = 'Paste',
-      Enabled = false
+    [18]={
+      ["Name"]="NewFileMenuItem",
+      ["Type"]="Button",
+      ["Text"]="New File..."
     },
   },
 }

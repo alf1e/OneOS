@@ -1,66 +1,14 @@
 {
-    Children = {
-        {
-            X = 1,
-            Y = 1,
-            Width = '100%',
-            Height = 3,
-            BackgroundColour = 'grey',
-            Type = 'View',
-            Name = 'Toolbar',
-            Children = {
-                {
-                    X = '50%,-19',
-                    Y = 2,
-                    Width = 39,
-                    Height = 1,
-                    Type = 'View',
-                    Name = 'SelectionWrap',
-                    Children = {
-                        {
-                            X = 1,
-                            Y = 1,
-                            Type = 'Button',
-                            Text = 'About',
-                            Name = 'AboutButton',
-                            TextColour = 'grey',
-                            BackgroundColour = 'white',
-                            Toggle = false
-                        },
-                        {
-                            X = 9,
-                            Y = 1,
-                            Type = 'Button',
-                            Text = 'Appearance',
-                            Name = 'AppearanceButton',
-                            TextColour = 'grey',
-                            BackgroundColour = 'white',
-                            Toggle = false
-                        },
-                        {
-                            X = 22,
-                            Y = 1,
-                            Type = 'Button',
-                            Text = 'Storage',
-                            Name = 'StorageButton',
-                            TextColour = 'grey',
-                            BackgroundColour = 'white',
-                            Toggle = false
-                        },
-                        {
-                            X = 32,
-                            Y = 1,
-                            Type = 'Button',
-                            Text = 'System',
-                            Name = 'SystemButton',
-                            TextColour = 'grey',
-                            BackgroundColour = 'white',
-                            Toggle = false
-                        },
-                    }
-                }
-            }
-        },
+  ["Children"]={
+    [1]={
+      ["Y"]=1,
+      ["X"]=1,
+      ["Name"]="Toolbar",
+      ["Type"]="View",
+      ["InheritView"]="toolbar"
     },
-    BackgroundColour = 'white',
+  },
+  ["BackgroundColour"]=1,
+  ["ToolBarColour"]=128,
+  ["ToolBarTextColour"]=1
 }

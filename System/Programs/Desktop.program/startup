@@ -1,289 +1,256 @@
-OneOS.LoadAPI('/System/API/Bedrock.lua')
--- Bedrock.ProgramPath = shell.getRunningProgram()
+OneOS.LoadAPI('/System/API/Bedrock.lua', false)
+--do return end
+program = Bedrock:Initialise()
 
-local program = Bedrock:Initialise()
+local files = {}
+local offset = 0
+local dragRelPos = nil
+local currentPage = 1
+local totalPages = 1
+local dragLock = false
+local dragTimer = nil
 
-local settings = nil
-local dontSave = false
-local lastCheck = {}
+local function FilesHaveChanged()
+	local list = OneOS.FS.list('Desktop/')
 
-local function saveSettings()
-	if not dontSave then
-		local h = OneOS.FS.open('/Desktop/.Desktop.settings', 'w')
-		if h then
-			h.write(textutils.serialize(settings))
-			h.close()
-		end
+	local count = 0
+	for k, v in pairs(files) do
+		count = count + 1
 	end
-end
-
-local function loadSettings()
-	local h = OneOS.FS.open('/Desktop/.Desktop.settings', 'r')
-	if h then
-		textutils.unserialize(h.readAll())
-		h.close()
-	end
-end
-
-local function tidyIcons(all)
-	dontSave = true
-	local minX = 1 + math.ceil((Drawing.Screen.Width - FileIcon.Width * math.floor(Drawing.Screen.Width / FileIcon.Width)) / 2)
-	local x = minX
-	local y = 2
-
-	for i, icon in ipairs(program:GetObjects('FileIcon')) do
-		if all or (icon.X == 0 and icon.Y == 0) then
-			icon.X = x
-			icon.Y = y
-		end
-		x = x + icon.Width
-
-		if x + icon.Width - 1 > Drawing.Screen.Width then
-			x = minX
-			if y + 2 * icon.Height + 1 <= Drawing.Screen.Height then
-				y = y + icon.Height + 1
-			end			
-		end
-	end
-	dontSave = false
-	saveSettings()
-end
-
-local function updateIcons()
-	for i, v in ipairs(OneOS.FS.list('/Desktop/')) do
-		if v:sub(1,1) ~= '.' then
-			local x = 0
-			local y = 0
-			if settings and settings[v] then
-				x = settings[v].X
-				y = settings[v].Y
-			end
-			program:AddObject({
-				X = x,
-				Y = y,
-				Type = 'FileIcon',
-				Path = '/Desktop/' .. v,
-				OnUpdate = function(self, value)
-					if value == 'X' or value == 'Y' then
-						settings = settings or {}
-						settings[v] = settings[v] or {}
-						settings[v].X = self.X
-						settings[v].Y = self.Y
-						saveSettings()
-					elseif value == 'Selected' then
-						local label = self:GetObject('NameLabel')
-						if label then
-							label.BackgroundColour = (self.Selected and colours.blue or colours.transparent)
-							label.TextColour = (self.Selected and colours.white or colours.black)
-						end
-
-						if self.Selected then
-							for i, v in ipairs(program:GetObjects('FileIcon')) do
-								if v ~= self then
-									v.Selected = false
-								end
-							end
-						end
-					end
-				end
-			})
-		end
-	end
-	tidyIcons()
-end
-
-local searchTimeout
-
-local function showSearch()
-	searchTimeout = nil
-	if program.View.ChildOffset.Y ~= 3 then
-		program.View:AnimateValue('Y', nil, 3, 0.4, function()
-		end, program.View.ChildOffset)
-	end
-	local searchTextBox = program:GetObject('SearchTextBox')
-	local searchView = program:GetObject('SearchView')
-
-	program:SetActiveObject(searchTextBox)
-	searchTextBox.OnChange = function()
-		searchView:OnSearch(searchTextBox.Text)
-	end
-	searchView:OnSearch(searchTextBox.Text)
-end
-
-local function closeSearch()
-	program:SetActiveObject(program.View)
-	OneOS.Log.i('Close')
-	if program.View.ChildOffset.Y ~= 0 then
-		program.View:AnimateValue('Y', nil, 0, 0.4, function()
-		end, program.View.ChildOffset)
-	end
-	program:GetObject('SearchView').Visible = false
-	searchTimeout = program:StartTimer(function(_, timer)
-		if timer == searchTimeout then
-			program:GetObject('SearchTextBox').Text = ''
-		end
-	end, 30)
-end
-
-local dragStart
-local dragTimer
-
-function ViewClick(self, event, side, x, y)
-	if program.DragIcon and event == 'mouse_drag' then
-		program.DragIcon.X = x - program.DragIcon.DragX
-		program.DragIcon.Y = y - program.DragIcon.DragY
-		program.DragIcon:OnIconDrag(x, y)
-		program.IconDragTimer = program:StartTimer(function(_,timer)
-			if timer and timer == program.IconDragTimer then
-				program.IconDragTimer = nil
-				program.DragIcon = nil
-			end
-		end, 0.8)
-	elseif self.Visible and not self.IgnoreClick then
-		if program.View.ChildOffset.Y ~= 3 or y <= 3 then
-			for i = #self.Children, 1, -1 do --children are ordered from smallest Z to highest, so this is done in reverse
-				local child = self.Children[i]
-				if self:DoClick(child, event, side, x, y) then
-					if self.OnChildClick then
-						self:OnChildClick(child, event, side, x, y)
-					end
-					return true
-				end
-			end
-		end
-
-		if event == 'mouse_click' and self.OnClick and self:OnClick(event, side, x, y) ~= false then
-			return true
-		elseif event == 'mouse_drag' and self.OnDrag and self:OnDrag(event, side, x, y) ~= false then
-			return true
-		elseif event == 'mouse_scroll' and self.OnScroll and self:OnScroll(event, side, x, y) ~= false then
-			return true
-		else
-			return false
-		end
+	
+	if #list ~= count then
+		return true
 	else
-		return false
+		for i, v in ipairs(list) do
+			if not files[v] then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+local function MaxIcons()
+	local slotHeight = 5
+	local slotWidth = 11
+	local maxX = math.floor((Drawing.Screen.Width - 2) / slotWidth)
+	local maxY = math.floor((Drawing.Screen.Height - 2) / slotHeight)
+	local y, x = 2, math.floor(((Drawing.Screen.Width - (maxX * slotWidth))) / 2)
+	return x, y, maxX, maxY, maxX * maxY
+end
+
+local function IconLocation(i)
+	local slotHeight = 5
+	local slotWidth = 11
+	local x, y, maxX, maxY, maxPage = MaxIcons()
+	local _i = ((i-1) % maxPage) + 1
+	local rowPos = ((_i - 1) % maxX)
+	local colPos = math.ceil(_i / maxX) - 1
+	local page = math.ceil(i/maxPage)
+	x = x + (slotWidth * rowPos) + offset + 2 + Drawing.Screen.Width * (page - 1)
+	y = y + colPos * slotHeight
+	return x, y
+end
+
+local function AddOffset()
+	for k, v in pairs(files) do
+		v.X = v.BaseX + offset
+	end
+	program:Draw()
+end
+
+function ReloadIndicators()
+	local indicatorWidth = (totalPages * 2) - 2
+	local indicatorPos = math.ceil((Drawing.Screen.Width/2)) - totalPages
+	program:RemoveObjects('IndicatorButton')
+	for i = 1, totalPages do
+		local col = colours.grey
+		if currentPage == i then
+			col = colours.white
+		end
+		program:AddObject({
+			Type = 'Button',
+			X = indicatorPos + i * 2,
+			Y = Drawing.Screen.Height - 1,
+			Text = ' ',
+			Width = 1,
+			Name = 'IndicatorButton',
+			BackgroundColour = col,
+			OnClick = function(self)
+				GoToPage(i)
+			end
+		})
 	end
 end
 
-OneOS.Indexer.OnIndex = function()		
-	OneOS.Log.i('Files changed')
-	updateIcons()
+function ReloadFiles()
+	program:RemoveObjects('FileView')
+
+	local list = OneOS.FS.list('Desktop/')
+	files = {}
+	local count = 0
+	for i, v in ipairs(list) do
+		local x, y = IconLocation(i)
+		files[v] = program:AddObject({
+			Type = 'FileView',
+			X = x,
+			BaseX = x,
+			Y = y,
+			Name = 'FileView',
+			Path = 'Desktop/'..v,
+			OnClick = FileClick
+		})
+		count = i
+	end
+
+	local x, y, maxX, maxY, maxPage = MaxIcons()
+	totalPages = math.ceil(count/maxPage)
+
+	ReloadIndicators()
+end
+
+function FileClick(self, event, side, x, y, obj)
+	if side == 1 then
+		OneOS.Helpers.OpenFile(self.Path)
+	elseif side == 2 then
+		obj = obj or self
+		if obj:ToggleMenu('filemenu', x, y) then
+			self.Bedrock:GetObject('OpenMenuItem').OnClick = function(itm)
+				OneOS.Helpers.OpenFile(self.Path)
+			end
+
+			self.Bedrock:GetObject('RenameMenuItem').OnClick = function(itm)
+				OneOS.Helpers.RenameFile(self.Path, ReloadFiles, self.Bedrock)
+			end
+
+			self.Bedrock:GetObject('DeleteMenuItem').OnClick = function(itm)
+				OneOS.Helpers.DeleteFile(self.Path, ReloadFiles, self.Bedrock)
+			end
+
+			self.Bedrock:GetObject('NewFolderMenuItem').OnClick = function(itm)
+				OneOS.Helpers.NewFolder(OneOS.Helpers.ParentFolder(self.Path)..'/', ReloadFiles, self.Bedrock)
+			end
+
+			self.Bedrock:GetObject('NewFileMenuItem').OnClick = function(itm)
+				OneOS.Helpers.NewFile(OneOS.Helpers.ParentFolder(self.Path)..'/', ReloadFiles, self.Bedrock)
+			end
+
+			self.Bedrock:GetObject('RefreshMenuItem').OnClick = function(itm)
+				ReloadFiles()
+			end
+		end
+	end
+end
+
+function GoToPage(i)
+	if i > 0 and i <= totalPages then
+		selectedFile = nil
+		local old = currentPage
+		currentPage = i
+		AnimatePageChange(old, currentPage)
+	end
+end
+
+function DragTimeout()
+	AnimatePageChange(currentPage, currentPage)
+end
+
+function AnimatePageChange(from, to)
+	dragLock = true
+	dragRelPos = nil
+	local max = -1*Drawing.Screen.Width * (to - 1)
+	local relOffset = (offset + Drawing.Screen.Width * (to - 1))
+	local direction = -1
+	if relOffset < 0 then
+		direction = 1
+	end
+	if OneOS.Settings:GetValues()['UseAnimations'] then
+		if relOffset < 0 then
+			relOffset = relOffset * -1
+		end
+		local speed = math.floor(Drawing.Screen.Width / 6)--4--math.ceil(relOffset / Drawing.Screen.Width * 5)
+		while ((max < offset) and direction == -1) or ((max > offset) and direction == 1) do
+			offset = offset + direction * speed
+			relOffset = (offset + Drawing.Screen.Width * (to - 1))
+			if speed > relOffset and relOffset > -1*speed then
+				offset = max
+			end
+			AddOffset()			
+			sleep(0.05)
+		end
+	end
+	offset = max
+	ReloadIndicators()
+	AddOffset()
+	dragLock = false
+end
+
+local function viewClick(self, event, side, x, y)
+	if side == 1 then
+		dragRelPos = x
+	elseif side == 2 then
+		if program.View:ToggleMenu('desktopmenu', x, y) then
+			program:GetObject('NewFolderMenuItem').OnClick = function(itm)
+				OneOS.Helpers.NewFolder('/Desktop/', ReloadFiles, self.Bedrock)
+			end
+
+			program:GetObject('NewFileMenuItem').OnClick = function(itm)
+				OneOS.Helpers.NewFile('/Desktop/', ReloadFiles, self.Bedrock)
+			end
+
+			program:GetObject('RefreshMenuItem').OnClick = function(itm)
+				ReloadFiles()
+			end
+		end
+	end
+end
+
+local function viewDrag(self, event, side, x, y)
+	if dragRelPos then
+		offset = (x - dragRelPos) - Drawing.Screen.Width * (currentPage - 1)
+		AddOffset()
+	end
+	if not dragLock then
+		program:StopTimer(dragTimer)
+		dragTimer = program:StartTimer(DragTimeout, 1)
+		local relOffset = (offset + Drawing.Screen.Width * (currentPage - 1))
+		if relOffset < 0 and relOffset < -1*Drawing.Screen.Width/4 then
+			GoToPage(currentPage + 1)
+		elseif relOffset > 0 and relOffset > Drawing.Screen.Width/4 then
+			GoToPage(currentPage - 1)
+		end
+	end
+end
+
+function UpdateBackground()
+	local colour = OneOS.Settings:GetValues()['DesktopColour']
+	if colour then
+		program.View.BackgroundColour = colour
+	end
+end
+
+program.OnKeyChar = function(self, event, key)
+	if not program:GetActiveObject() then
+		if key == keys.right then
+			GoToPage(currentPage + 1)
+		elseif key == keys.left then
+			GoToPage(currentPage - 1)
+		end
+	end
 end
 
 program:Run(function()
-	program.View.BackgroundColour = OneOS.System.Settings.DesktopColour
-	OneOS.System.Settings:OnUpdate(function(key)
-		if key == 'DesktopColour' then
-			program.View.BackgroundColour = OneOS.System.Settings.DesktopColour
-		end
-	end)
-
-	loadSettings()
-	updateIcons()
-	program.View.ChildOffset = {X = 0, Y = 0}
-
-	program.View.Click = ViewClick
-
-	program.View.OnClick = function(self, event, side, x, y)
-		if program.View.ChildOffset.Y == 3 then
-			if y >= 4 then
-				closeSearch()
-			else
-				return false
-			end
-		else
-			dragStart = y
-			dragTimer = program:StartTimer(function(_, timer)
-				if timer == dragTimer then
-					dragStart = nil
-					if program.View.ChildOffset.Y >= 3 then
-						showSearch()
-					else
-						closeSearch()
-					end
-				end
-			end, 1)
-		end
-	end
-	-- TODO: search
-	-- program.View.OnDrag = function(self, event, side, x, y)
-	-- 	if dragStart then
-	-- 		program.View.ChildOffset.Y = y - dragStart
-	-- 		program.View:ForceDraw()
-
-	-- 		OneOS.Log.i('drag')
-	-- 		dragTimer = program:StartTimer(function(_, timer)
-	-- 		OneOS.Log.i('times up')
-	-- 		OneOS.Log.i(timer)
-	-- 			if timer == dragTimer then
-	-- 		OneOS.Log.i('right timer')
-	-- 				xdragStart = nil
-	-- 		OneOS.Log.i('trhee')
-	-- 				if program.View.ChildOffset.Y >= 3 then
-	-- 					showSearch()
-	-- 				else
-	-- 					closeSearch()
-	-- 				end
-	-- 			end
-	-- 		end, 1)
-	-- 	end
-	-- end
-
-	program.View.OnKeyChar = function(self, event, keychar)
-		if keychar == keys.space and not program:GetObject('SearchView').Visible then
-			showSearch()
-			return false
-		end
-	end
-
-	program:SetActiveObject(program.View)
-
-	program:GetObject('CancelLabel').OnClick = function()
-		closeSearch()
-	end
-
-	program:GetObject('SearchButton').OnClick = function()
-		showSearch()
-	end
-
-	program:GetObject('ShutdownButton').OnClick = function()
-		OneOS.Shutdown()
-	end
-
-	program:GetObject('RestartButton').OnClick = function()
-		OneOS.Restart()
-	end
-
-	-- local function check()
-	-- 	local newCheck = OneOS.FS.list('/Desktop/')
-	-- 	if #newCheck ~= #lastCheck then
-	-- 		return true
-	-- 	end
-
-	-- 	for i, v in ipairs(newCheck) do
-	-- 		if lastCheck[i] ~= v then
-	-- 			local ok = false
-	-- 			for i2, v2 in ipairs(lastCheck) do
-	-- 				if v == v2 then
-	-- 					ok = true
-	-- 					break
-	-- 				end
-	-- 			end
-	-- 			if not ok then
-	-- 				return true
-	-- 			end
-	-- 		end
-	-- 	end
-	-- 	return false
-	-- end
-
-	-- lastCheck = OneOS.FS.list('/Desktop/')
-
+	program:LoadView('main')
+	UpdateBackground()
+	OneOS.Settings.SetDesktopColourChange(UpdateBackground)
+	ReloadFiles()
 	-- program:StartRepeatingTimer(function()
-	-- 	if check() then
-	-- 		refresh()
+	-- 	if FilesHaveChanged() then
+	-- 		ReloadFiles()
+	-- 		GoToPage(1)
 	-- 	end
 	-- end, 5)
 
+	program.View.OnClick = viewClick
+	program.View.OnDrag = viewDrag
 end)

@@ -1,4 +1,4 @@
---Bedrock Build: 572
+--Bedrock Build: 271
 --This code is squished down in to one, rather hard to read file.
 --As such it is not much good for anything other than being loaded as an API.
 --If you want to look at the code to learn from it, copy parts or just take a look,
@@ -13,114 +13,6 @@
 --
 
 local apis = {
-["Communicate"] = [[
-Channel = 42000
-Callbacks = {}
-CallbackTimeouts = {}
-MessageTimeout = 0.5
-MessageTypeHandlers = {}
-
-local getNames = peripheral.getNames or function()
-    local tResults = {}
-    for n,sSide in ipairs( rs.getSides() ) do
-            if peripheral.isPresent( sSide ) then
-                    table.insert( tResults, sSide )
-                    local isWireless = false
-                    if pcall(function()isWireless = peripheral.call(sSide, 'isWireless') end) then
-                            isWireless = true
-                    end     
-                    if peripheral.getType( sSide ) == "modem" and not isWireless then
-                            local tRemote = peripheral.call( sSide, "getNamesRemote" )
-                            for n,sName in ipairs( tRemote ) do
-                                    table.insert( tResults, sName )
-                            end
-                    end
-            end
-    end
-    return tResults
-end
-
-GetModems = function(self, callback)
-    local ok = false
-    for i, name in ipairs(getNames()) do
-            ok = true
-            if callback then
-                    local p = peripheral.wrap(name)
-                    callback(p, name)
-            end
-    end
-    return ok
-end
-
-Initialise = function(self, bedrock)
-    local new = {}
-    setmetatable(new, {__index = self})
-    new.Bedrock = bedrock
-    new.Bedrock:RegisterEvent('modem_message', function(_, event, name, channel, replyChannel, message, distance)
-            new:OnMessage(event, name, channel, replyChannel, message, distance)
-    end)
-    if new:GetModems(function(modem, name)
-                    modem.open(new.Channel)
-            end)
-    then
-            return new
-    end
-    return false
-end
-
-RegisterMessageType = function(self, msgType, callback)
-    self.MessageTypeHandlers[msgType] = callback
-end
-
-OnMessage = function(self, event, name, channel, replyChannel, message, distance)
-    if channel == self.Channel and type(message) == 'table' and message.msgType and message.thread and message.id ~= os.getComputerID() then
-            if self.Callbacks[message.thread] then
-                    local response, callback = self.Callbacks[message.thread](message.content, message, distance)
-                    if response ~= nil then
-                            self:Reply(response, message, callback)
-                    end
-            elseif self.MessageTypeHandlers[message.msgType] then
-                    local response = self.MessageTypeHandlers[message.msgType](message, message.msgType, message.content, distance)
-                    if response ~= nil then
-                            self:Reply(response, message)
-                    end
-            else
-            end
-            return true
-    else
-            return false
-    end
-end
-
-Reply = function(self, content, message, callback)
-    self:SendMessage(message.msgType, content, callback, message.thread)
-end
-
-SendMessage = function(self, msgType, content, callback, thread, multiple)
-    thread = thread or tostring(math.random())
-    if self:GetModems(function(modem, name)
-                    modem.transmit(self.Channel, self.Channel, {msgType = msgType, content = content, thread = thread, id = os.getComputerID()})
-            end)
-    then
-            if callback then
-                    self.Callbacks[thread] = function(...)
-                            if not multiple then
-                                    self.Callbacks[thread] = nil
-                                    self.CallbackTimeouts[thread] = nil
-                            end
-                            return callback(...), callback
-                    end
-                    self.CallbackTimeouts[thread] = self.Bedrock:StartTimer(function(_, timer)
-                            if timer == self.CallbackTimeouts[thread] then
-                                    callback(false)
-                            end
-                    end, self.MessageTimeout)
-            end
-            return true
-    end
-    return false
-end
-]],
 ["Drawing"] = [[
 local round = function(num, idp)
 	local mult = 10^(idp or 0)
@@ -189,26 +81,6 @@ colours.transparent = 0
 colors.transparent = 0
 
 Filters = {
-	None = {
-		[colours.white] = colours.white,
-		[colours.orange] = colours.orange,
-		[colours.magenta] = colours.magenta,
-		[colours.lightBlue] = colours.lightBlue,
-		[colours.yellow] = colours.yellow,
-		[colours.lime] = colours.lime,
-		[colours.pink] = colours.pink,
-		[colours.grey] = colours.grey,
-		[colours.lightGrey] = colours.lightGrey,
-		[colours.cyan] = colours.cyan,
-		[colours.purple] = colours.purple,
-		[colours.blue] = colours.blue,
-		[colours.brown] = colours.brown,
-		[colours.green] = colours.green,
-		[colours.red] = colours.red,
-		[colours.black] = colours.black,
-		[colours.transparent] = colours.transparent,
-	},
-
 	Greyscale = {
 		[colours.white] = colours.white,
 		[colours.orange] = colours.lightGrey,
@@ -225,116 +97,15 @@ Filters = {
 		[colours.brown] = colours.grey,
 		[colours.green] = colours.grey,
 		[colours.red] = colours.grey,
-		[colours.black] = colours.black,
 		[colours.transparent] = colours.transparent,
-	},
-
-	BlackWhite = {
-		[colours.white] = colours.white,
-		[colours.orange] = colours.white,
-		[colours.magenta] = colours.white,
-		[colours.lightBlue] = colours.white,
-		[colours.yellow] = colours.white,
-		[colours.lime] = colours.white,
-		[colours.pink] = colours.white,
-		[colours.grey] = colours.black,
-		[colours.lightGrey] = colours.white,
-		[colours.cyan] = colours.black,
-		[colours.purple] = colours.black,
-		[colours.blue] = colours.black,
-		[colours.brown] = colours.black,
-		[colours.green] = colours.black,
-		[colours.red] = colours.black,
-		[colours.black] = colours.black,
-		[colours.transparent] = colours.transparent,
-	},
-
-	Darker = {
-		[colours.white] = colours.lightGrey,
-		[colours.orange] = colours.red,
-		[colours.magenta] = colours.purple,
-		[colours.lightBlue] = colours.cyan,
-		[colours.yellow] = colours.orange,
-		[colours.lime] = colours.green,
-		[colours.pink] = colours.magenta,
-		[colours.grey] = colours.black,
-		[colours.lightGrey] = colours.grey,
-		[colours.cyan] = colours.blue,
-		[colours.purple] = colours.grey,
-		[colours.blue] = colours.grey,
-		[colours.brown] = colours.grey,
-		[colours.green] = colours.grey,
-		[colours.red] = colours.brown,
-		[colours.black] = colours.black,
-		[colours.transparent] = colours.transparent,
-	},
-
-	Lighter = {
-		[colours.white] = colours.lightGrey,
-		[colours.orange] = colours.yellow,
-		[colours.magenta] = colours.pink,
-		[colours.lightBlue] = colours.cyan,
-		[colours.yellow] = colours.orange,
-		[colours.lime] = colours.green,
-		[colours.pink] = colours.magenta,
-		[colours.grey] = colours.lightGrey,
-		[colours.lightGrey] = colours.grey,
-		[colours.cyan] = colours.lightBlue,
-		[colours.purple] = colours.magenta,
-		[colours.blue] = colours.lightBlue,
-		[colours.brown] = colours.red,
-		[colours.green] = colours.lime,
-		[colours.red] = colours.orange,
-		[colours.black] = colours.grey,
-		[colours.transparent] = colours.transparent,
-	},
-
-	Highlight = {
-		[colours.white] = colours.lightGrey,
-		[colours.orange] = colours.yellow,
-		[colours.magenta] = colours.pink,
-		[colours.lightBlue] = colours.cyan,
-		[colours.yellow] = colours.orange,
-		[colours.lime] = colours.green,
-		[colours.pink] = colours.magenta,
-		[colours.grey] = colours.lightGrey,
-		[colours.lightGrey] = colours.grey,
-		[colours.cyan] = colours.lightBlue,
-		[colours.purple] = colours.magenta,
-		[colours.blue] = colours.lightBlue,
-		[colours.brown] = colours.red,
-		[colours.green] = colours.lime,
-		[colours.red] = colours.orange,
-		[colours.black] = colours.grey,
-		[colours.transparent] = colours.transparent,
-	},
-
-	Invert = {
-		[colours.white] = colours.black,
-		[colours.orange] = colours.blue,
-		[colours.magenta] = colours.green,
-		[colours.lightBlue] = colours.brown,
-		[colours.yellow] = colours.blue,
-		[colours.lime] = colours.purple,
-		[colours.pink] = colours.green,
-		[colours.grey] = colours.lightGrey,
-		[colours.lightGrey] = colours.grey,
-		[colours.cyan] = colours.red,
-		[colours.purple] = colours.green,
-		[colours.blue] = colours.yellow,
-		[colours.brown] = colours.lightBlue,
-		[colours.green] = colours.purple,
-		[colours.red] = colours.cyan,
-		[colours.black] = colours.white,
-		[colours.transparent] = colours.transparent,
-	},
+	}
 }
 
 function FilterColour(colour, filter)
 	if filter[colour] then
 		return filter[colour]
 	else
-		return colour
+		return colours.black
 	end
 end
 
@@ -491,27 +262,21 @@ DrawBuffer = function()
 		Restore()
 	end
 
-	-- If the program is within OneOS pass our buffer straight to the OS to draw rather than fidling around with the term API
-
-	if OneOS and OneOS.Buffer then
-		Drawing.Buffer = OneOS.Buffer
-	else
-		for y,row in pairs(Drawing.Buffer) do
-			for x,pixel in pairs(row) do
-				local shouldDraw = true
-				local hasBackBuffer = true
-				if Drawing.BackBuffer[y] == nil or Drawing.BackBuffer[y][x] == nil or #Drawing.BackBuffer[y][x] ~= 3 then
-					hasBackBuffer = false
-				end
-				if hasBackBuffer and Drawing.BackBuffer[y][x][1] == Drawing.Buffer[y][x][1] and Drawing.BackBuffer[y][x][2] == Drawing.Buffer[y][x][2] and Drawing.BackBuffer[y][x][3] == Drawing.Buffer[y][x][3] then
-					shouldDraw = false
-				end
-				if shouldDraw then
-					term.setBackgroundColour(pixel[3])
-					term.setTextColour(pixel[2])
-					term.setCursorPos(x, y)
-					term.write(pixel[1])
-				end
+	for y,row in pairs(Drawing.Buffer) do
+		for x,pixel in pairs(row) do
+			local shouldDraw = true
+			local hasBackBuffer = true
+			if Drawing.BackBuffer[y] == nil or Drawing.BackBuffer[y][x] == nil or #Drawing.BackBuffer[y][x] ~= 3 then
+				hasBackBuffer = false
+			end
+			if hasBackBuffer and Drawing.BackBuffer[y][x][1] == Drawing.Buffer[y][x][1] and Drawing.BackBuffer[y][x][2] == Drawing.Buffer[y][x][2] and Drawing.BackBuffer[y][x][3] == Drawing.Buffer[y][x][3] then
+				shouldDraw = false
+			end
+			if shouldDraw then
+				term.setBackgroundColour(pixel[3])
+				term.setTextColour(pixel[2])
+				term.setCursorPos(x, y)
+				term.write(pixel[1])
 			end
 		end
 	end
@@ -604,33 +369,32 @@ LongestString = function(input, key, isKey)
 	return length
 end
 
-Split = function(a,e)
-	local t,e=e or":",{}
-	local t=string.format("([^%s]+)",t)
-	a:gsub(t,function(t)e[#e+1]=t end)
-	return e
+Split = function(str,sep)
+    sep=sep or'/'
+    return str:match("(.*"..sep..")")
 end
 
 Extension = function(path, addDot)
 	if not path then
 		return nil
 	elseif not string.find(fs.getName(path), '%.') then
-		return ''
+		if not addDot then
+			return fs.getName(path)
+		else
+			return ''
+		end
 	else
 		local _path = path
 		if path:sub(#path) == '/' then
 			_path = path:sub(1,#path-1)
 		end
-
 		local extension = _path:gmatch('%.[0-9a-z]+$')()
 		if extension then
 			extension = extension:sub(2)
-		elseif fs.getName(_path):sub(1,1) == '.' then
-			extension = fs.getName(_path):sub(2)
 		else
+			--extension = nil
 			return ''
 		end
-		
 		if addDot then
 			extension = '.'..extension
 		end
@@ -640,7 +404,7 @@ end
 
 RemoveExtension = function(path)
 --local name = string.match(fs.getName(path), '(%a+)%.?.-')
-	if not path:find('%.') then
+	if path:sub(1,1) == '.' then
 		return path
 	end
 	local extension = Helpers.Extension(path)
@@ -659,11 +423,6 @@ RemoveFileName = function(path)
 		return v
 	end
 	return v[1]
-end
-
-ParentFolder = function(path)
-	local folderName = fs.getName(path)
-	return path:sub(1, #path-#folderName-1)
 end
 
 TruncateString = function(sString, maxLength)
@@ -707,15 +466,12 @@ WrapText = function(text, maxWidth)
                     lines[#lines] = lines[#lines] .. word .. space
             end
     end
-    if #lines[1] == 0 then
-        table.remove(lines,1)
-    end
 	return lines
 end
 
 TidyPath = function(path)
 	path = '/'..path
-	if fs.exists(path) and fs.isDir(path) or (OneOS and OneOS.FS.exists(path) and OneOS.FS.isDir(path)) then
+	if fs.exists(path) and fs.isDir(path) then
 		path = path .. '/'
 	end
 
@@ -748,7 +504,6 @@ Name = nil
 ClipDrawing = true
 UpdateDrawBlacklist = {}
 Fixed = false
-Ready = false
 
 DrawCache = {}
 
@@ -821,11 +576,6 @@ Draw = function(self)
 		end
 	end
 
-
-	if self.OnPostChildrenDraw then
-		self:OnPostChildrenDraw(pos.X, pos.Y)
-	end
-
 	if self.ClipDrawing then
 		Drawing.RemoveConstraint()
 	end	
@@ -881,7 +631,7 @@ Initialise = function(self, values)
 				k = k:gsub('Color', 'Colour')
 			end
 
-			if k:find('Colour') and type(_new[k]) ~= 'table' and type(_new[k]) ~= 'function' then
+			if k:find('Colour') and type(_new[k]) ~= 'table' then
 				if _new[k] then
 					return ParseColour(_new[k])
 				end
@@ -918,46 +668,6 @@ Initialise = function(self, values)
 	return new
 end
 
-AnimateValue = function(self, valueName, from, to, duration, done, tbl)
-	tbl = tbl or self
-	if type(tbl[valueName]) ~= 'number' then
-		error('Animated value ('..valueName..') must be number.')
-	elseif not self.Bedrock.AnimationEnabled then
-		tbl[valueName] = to
-		if done then
-			done()
-		end
-		return
-	end
-	from = from or tbl[valueName]
-	duration = duration or 0.2
-	local delta = to - from
-
-	local startTime = os.clock()
-	local previousFrame = startTime
-	local frame
-	frame = function()
-		local time = os.clock()
-		local totalTime = time - startTime
-		local isLast = totalTime >= duration
-
-		if isLast then
-			tbl[valueName] = to
-			self:ForceDraw()
-			if done then
-				done()
-			end
-		else
-			tbl[valueName] = self.Bedrock.Helpers.Round(from + delta * (totalTime / duration))
-			self:ForceDraw()
-			self.Bedrock:StartTimer(function()
-				frame()
-			end, 0.05)
-		end
-	end
-	frame()
-end
-
 Click = function(self, event, side, x, y)
 	if self.Visible and not self.IgnoreClick then
 		if event == 'mouse_click' and self.OnClick and self:OnClick(event, side, x, y) ~= false then
@@ -985,210 +695,6 @@ function OnUpdate(self, value)
 	end
 end
 ]],
-["Peripheral"] = [[
-GetPeripheral = function(_type)
-	for i, p in ipairs(GetPeripherals()) do
-		if p.Type == _type then
-			return p
-		end
-	end
-end
-
-Call = function(type, ...)
-	local tArgs = {...}
-	local p = GetPeripheral(type)
-	peripheral.call(p.Side, unpack(tArgs))
-end
-
-local getNames = peripheral.getNames or function()
-	local tResults = {}
-	for n,sSide in ipairs( rs.getSides() ) do
-		if peripheral.isPresent( sSide ) then
-			table.insert( tResults, sSide )
-			local isWireless = false
-			if pcall(function()isWireless = peripheral.call(sSide, 'isWireless') end) then
-				isWireless = true
-			end     
-			if peripheral.getType( sSide ) == "modem" and not isWireless then
-				local tRemote = peripheral.call( sSide, "getNamesRemote" )
-				for n,sName in ipairs( tRemote ) do
-					table.insert( tResults, sName )
-				end
-			end
-		end
-	end
-	return tResults
-end
-
-GetPeripherals = function(filterType)
-	local peripherals = {}
-	for i, side in ipairs(getNames()) do
-		local name = peripheral.getType(side):gsub("^%l", string.upper)
-		local code = string.upper(side:sub(1,1))
-		if side:find('_') then
-			code = side:sub(side:find('_')+1)
-		end
-
-		local dupe = false
-		for i, v in ipairs(peripherals) do
-			if v[1] == name .. ' ' .. code then
-				dupe = true
-			end
-		end
-
-		if not dupe then
-			local _type = peripheral.getType(side)
-			local formattedType = _type:sub(1, 1):upper() .. _type:sub(2, -1)
-			local isWireless = false
-			if _type == 'modem' then
-				if not pcall(function()isWireless = peripheral.call(side, 'isWireless') end) then
-					isWireless = true
-				end     
-				if isWireless then
-					_type = 'wireless_modem'
-					formattedType = 'Wireless Modem'
-					name = 'W '..name
-				end
-			end
-			if not filterType or _type == filterType then
-				table.insert(peripherals, {Name = name:sub(1,8) .. ' '..code, Fullname = name .. ' ('..side:sub(1, 1):upper() .. side:sub(2, -1)..')', Side = side, Type = _type, Wireless = isWireless, FormattedType = formattedType})
-			end
-		end
-	end
-	return peripherals
-end
-
-GetSide = function(side)
-	for i, p in ipairs(GetPeripherals()) do
-		if p.Side == side then
-			return p
-		end
-	end
-end
-
-PresentNamed = function(name)
-	return peripheral.isPresent(name)
-end
-
-CallType = function(type, ...)
-	local tArgs = {...}
-	local p = GetPeripheral(type)
-	return peripheral.call(p.Side, unpack(tArgs))
-end
-
-CallNamed = function(name, ...)
-	local tArgs = {...}
-	return peripheral.call(name, unpack(tArgs))
-end
-
-GetInfo = function(p)
-	local info = {}
-	local buttons = {}
-	if p.Type == 'computer' then
-		local id = peripheral.call(p.Side:lower(),'getID')
-		if id then
-			info = {
-				ID = tostring(id)
-			}
-		else
-			info = {}
-		end
-	elseif p.Type == 'drive' then
-		local discType = 'No Disc'
-		local discID = nil
-		local mountPath = nil
-		local discLabel = nil
-		local songName = nil
-		if peripheral.call(p.Side:lower(), 'isDiskPresent') then
-			if peripheral.call(p.Side:lower(), 'hasData') then
-				discType = 'Data'
-				discID = peripheral.call(p.Side:lower(), 'getDiskID')
-				if discID then
-					discID = tostring(discID)
-				else
-					discID = 'None'
-				end
-				mountPath = '/'..peripheral.call(p.Side:lower(), 'getMountPath')..'/'
-				discLabel = peripheral.call(p.Side:lower(), 'getDiskLabel')
-			else
-				discType = 'Audio'
-				songName = peripheral.call(p.Side:lower(), 'getAudioTitle')
-			end
-		end
-		if mountPath then
-			table.insert(buttons, {Text = 'View Files', OnClick = function(self, event, side, x, y)GoToPath(mountPath)end})
-		elseif discType == 'Audio' then
-			table.insert(buttons, {Text = 'Play', OnClick = function(self, event, side, x, y)
-				if self.Text == 'Play' then
-					disk.playAudio(p.Side:lower())
-					self.Text = 'Stop'
-				else
-					disk.stopAudio(p.Side:lower())
-					self.Text = 'Play'
-				end
-			end})
-		else
-			diskOpenButton = nil
-		end
-		if discType ~= 'No Disc' then
-			table.insert(buttons, {Text = 'Eject', OnClick = function(self, event, side, x, y)disk.eject(p.Side:lower()) sleep(0) RefreshFiles() end})
-		end
-
-		info = {
-			['Disc Type'] = discType,
-			['Disc Label'] = discLabel,
-			['Song Title'] = songName,
-			['Disc ID'] = discID,
-			['Mount Path'] = mountPath
-		}
-	elseif p.Type == 'printer' then
-		local pageSize = 'No Loaded Page'
-		local _, err = pcall(function() return tostring(peripheral.call(p.Side:lower(), 'getPgaeSize')) end)
-		if not err then
-			pageSize = tostring(peripheral.call(p.Side:lower(), 'getPageSize'))
-		end
-		info = {
-			['Paper Level'] = tostring(peripheral.call(p.Side:lower(), 'getPaperLevel')),
-			['Paper Size'] = pageSize,
-			['Ink Level'] = tostring(peripheral.call(p.Side:lower(), 'getInkLevel'))
-		}
-	elseif p.Type == 'modem' then
-		info = {
-			['Connected Peripherals'] = tostring(#peripheral.call(p.Side:lower(), 'getNamesRemote'))
-		}
-	elseif p.Type == 'monitor' then
-		local w, h = peripheral.call(p.Side:lower(), 'getSize')
-		local screenType = 'Black and White'
-		if peripheral.call(p.Side:lower(), 'isColour') then
-			screenType = 'Colour'
-		end
-		local buttonTitle = 'Use as Screen'
-		if OneOS.Settings:GetValues()['Monitor'] == p.Side:lower() then
-			buttonTitle = 'Use Computer Screen'
-		end
-		table.insert(buttons, {Text = buttonTitle, OnClick = function(self, event, side, x, y)
-				self.Bedrock:DisplayAlertWindow('Reboot Required', "To change screen you'll need to reboot your computer.", {'Reboot', 'Cancel'}, function(value)
-					if value == 'Reboot' then
-						if buttonTitle == 'Use Computer Screen' then
-							OneOS.Settings:SetValue('Monitor', nil)
-						else
-							OneOS.Settings:SetValue('Monitor', p.Side:lower())
-						end
-						OneOS.Reboot()
-					end
-				end)
-			end
-		})
-		info = {
-			['Type'] = screenType,
-			['Width'] = tostring(w),
-			['Height'] = tostring(h),
-		}
-	end
-	info.Buttons = buttons
-	return info
-end
-]],
 }
 local objects = {
 ["Button"] = [[
@@ -1200,7 +706,7 @@ DisabledTextColour = colours.lightGrey
 Text = ""
 Toggle = nil
 Momentary = true
-AutoWidth = true
+AutoWidthAutoWidth = true
 Align = 'Center'
 Enabled = true
 
@@ -1232,6 +738,7 @@ OnDraw = function(self, x, y)
     elseif self.Align == 'Center' then
         _x = math.floor((self.Width - #self.Text) / 2)
     end
+
 
 	Drawing.DrawCharacters(x + _x, y-1+math.ceil(self.Height/2), self.Text, txt, bg)
 end
@@ -1282,19 +789,18 @@ OnDraw = function(self, x, y)
 end
 
 local function MaxIcons(self, obj)
+	local x, y = 2, 1
 	if not obj.Height or not obj.Width then
 		error('You must provide each object\'s height when adding to a CollectionView.')
 	end
 	local slotHeight = obj.Height + self.SpacingY
 	local slotWidth = obj.Width + self.SpacingX
 	local maxX = math.floor((self.Width - 2) / slotWidth)
-	return maxX, slotWidth, slotHeight
+	return x, y, maxX, slotWidth, slotHeight
 end
 
 local function IconLocation(self, obj, i)
-	local maxX, slotWidth, slotHeight = MaxIcons(self, obj)
-	local y = 2
-	local x = 1 + math.ceil((self.Width - slotWidth * maxX) / 2)
+	local x, y, maxX, slotWidth, slotHeight = MaxIcons(self, obj)
 	local rowPos = ((i - 1) % maxX)
 	local colPos = math.ceil(i / maxX) - 1
 	x = x + (slotWidth * rowPos)
@@ -1314,7 +820,7 @@ local function AddItem(self, v, i)
 		["Name"]="CollectionViewItem",
 		["Type"]="View",
 		["TextColour"]=self.TextColour,
-		["BackgroundColour"]=0,
+		["BackgroundColour"]=0F,
 		OnClick = function(itm)
 			if self.CanSelect then
 				for i2, _v in ipairs(self.Children) do
@@ -1329,6 +835,7 @@ local function AddItem(self, v, i)
    	end
 	self:AddObject(item)
 end
+
 
 UpdateItems = function(self)
 	self:RemoveAllObjects()
@@ -1378,7 +885,6 @@ TextColour = colours.black
 BackgroundColour = colours.transparent
 Text = ""
 AutoWidth = false
-Wrap = true
 Align = 'Left'
 
 local wrapText = function(text, maxWidth)
@@ -1416,14 +922,7 @@ OnUpdate = function(self, value)
 end
 
 OnDraw = function(self, x, y)
-    local lines
-    if self.Wrap then
-        lines = wrapText(self.Text, self.Width)
-    else
-        lines = {self.Bedrock.Helpers.TruncateString(self.Text, self.Width)}
-    end
-
-	for i, v in ipairs(lines) do
+	for i, v in ipairs(wrapText(self.Text, self.Width)) do
         local _x = 0
         if self.Align == 'Right' then
             _x = self.Width - #v
@@ -1600,7 +1099,6 @@ Inherit = 'View'
 TextColour = colours.black
 BackgroundColour = colours.white
 HideTop = false
-Prepared = false
 
 OnDraw = function(self, x, y)
 	Drawing.IgnoreConstraint = true
@@ -1629,48 +1127,27 @@ end
 
 OnUpdate = function(self, value)
 	if value == 'Children' then
+		self.Width = self.Bedrock.Helpers.LongestString(self.Children, 'Text') + 2
 		self.Height = #self.Children + 1 + (self.HideTop and 0 or 1)
 		if not self.BaseY then
 			self.BaseY = self.Y
 		end
-		if #self.Children > 0 and self.Children[1].Type == 'Button' then
-			self.Width = self.Bedrock.Helpers.LongestString(self.Children, 'Text') + 2
-			for i, v in ipairs(self.Children) do
-				if v.TextColour then
-					v.TextColour = self.TextColour
-				end
-				if v.BackgroundColour then
-					v.BackgroundColour = colours.transparent
-				end
-				if v.Colour then
-					v.Colour = colours.lightGrey
-				end
-				v.Align = 'Left'
-				v.X = 1
-				v.Y = i + (self.HideTop and 0 or 1)
-				v.Width = self.Width
-				v.Height = 1
+
+		for i, v in ipairs(self.Children) do
+			if v.TextColour then
+				v.TextColour = self.TextColour
 			end
-		elseif #self.Children > 0 and self.Children[1].Type == 'MenuItem' then
-			local width = 1
-			for i, v in ipairs(self.Children) do
-				if v.Width > width then
-					width = v.Width
-				end
+			if v.BackgroundColour then
+				v.BackgroundColour = colours.transparent
 			end
-			self.Width = width
-			for i, v in ipairs(self.Children) do
-				if v.TextColour then
-					v.TextColour = self.TextColour
-				end
-				if v.Colour then
-					v.Colour = colours.lightGrey
-				end
-				v.X = 1
-				v.Y = i + (self.HideTop and 0 or 1)
-				v.Width = width
-				v.Height = 1
+			if v.Colour then
+				v.Colour = colours.lightGrey
 			end
+			v.Align = 'Left'
+			v.X = 1
+			v.Y = i + (self.HideTop and 0 or 1)
+			v.Width = self.Width
+			v.Height = 1
 		end
 
 		self.Y = self.BaseY
@@ -1687,12 +1164,7 @@ end
 
 Close = function(self, isBedrockCall)
 	self.Bedrock.Menu = nil
-	if not self.Prepared then
-		self.Parent:RemoveObject(self)
-	else
-		self.Visible = false
-	end
-
+	self.Parent:RemoveObject(self)
 	if self.Owner and self.Owner.Toggle then
 		self.Owner.Toggle = false
 	end
@@ -1702,194 +1174,6 @@ end
 
 OnChildClick = function(self, child, event, side, x, y)
 	self:Close()
-end
-]],
-["MenuItem"] = [[
-BackgroundColour = colours.white
-TextColour = colours.black
-DisabledTextColour = colours.lightGrey
-ShortcutTextColour = colours.grey
-Text = ""
-Enabled = true
-Shortcut = nil
-ShortcutPadding = 2
-ShortcutName = nil
-
-OnUpdate = function(self, value)
-	if value == 'Text' then
-		if self.Shortcut then
-			self.Width = #self.Text + 2 + self.ShortcutPadding + #self.Shortcut
-		else
-			self.Width = #self.Text + 2
-		end
-	elseif value == 'OnClick' then
-		self:RegisterShortcut()
-	end
-end
-
-OnDraw = function(self, x, y)
-	Drawing.DrawBlankArea(x, y, self.Width, self.Height, self.BackgroundColour)
-
-	local txt = self.TextColour
-	if not self.Enabled then
-		txt = self.DisabledTextColour
-	end
-	Drawing.DrawCharacters(x + 1, y, self.Text, txt, colours.transparent)
-
-	if self.Shortcut then
-		local shrt = self.ShortcutTextColour
-		if not self.Enabled then
-			shrt = self.DisabledTextColour
-		end
-		Drawing.DrawCharacters(x + self.Width - #self.Shortcut - 1, y, self.Shortcut, shrt, colours.transparent)
-	end
-end
-
-ParseShortcut = function(self)
-	local special = {
-		['^'] = keys.leftShift,
-		['<'] = keys.delete,
-		['>'] = keys.delete,
-		['#'] = keys.leftCtrl,
-		['~'] = keys.leftAlt,
-	}
-
-	local keys = {}
-	for i = 1, #self.Shortcut do
-	    local c = self.Shortcut:sub(i,i)
-    	table.insert(keys, special[c] or c:lower())
-	end
-	return keys
-end
-
-RegisterShortcut = function(self)
-	if self.Shortcut then
-		self.Shortcut = self.Shortcut:upper()
-		self.ShortcutName = self.Bedrock:RegisterKeyboardShortcut(self:ParseShortcut(), function()
-			if self.OnClick and self.Enabled then
-				if self.Parent.Owner then
-					self.Parent:Close()
-					self.Parent.Owner.Toggle = true
-					self.Bedrock:StartTimer(function()
-						self.Parent.Owner.Toggle = false
-					end, 0.3)
-				end
-				return self:OnClick('keyboard_shortcut', 1, 1, 1)
-			else
-				return false
-			end
-		end)
-	end
-end
-
-OnRemove = function(self)
-	if self.ShortcutName then
-		self.Bedrock:UnregisterKeyboardShortcut(self.ShortcutName)
-	end
-end
-
-OnLoad = function(self)
-	if self.OnClick ~= nil then
-		self:RegisterShortcut()
-	end
-	-- self:OnUpdate('Text')
-end
-]],
-["NumberBox"] = [[
-Inherit = 'View'
-
-Value = 1
-Minimum = 1
-Maximum = 99
-BackgroundColour = colours.lightGrey
-TextBoxTimer = nil
-Width = 7
-
-OnLoad = function(self)
-	self:AddObject({
-		X = self.Width - 1,
-		Y = 1,
-		Width = 1,
-		AutoWidth = false,
-		Text = '-',
-		Type = 'Button',
-		Name = 'AddButton',
-		BackgroundColour = colours.transparent,
-		OnClick = function()
-			self:ShiftValue(-1)
-		end
-	})
-
-	self:AddObject({
-		X = self.Width,
-		Y = 1,
-		Width = 1,
-		AutoWidth = false,
-		Text = '+',
-		Type = 'Button',
-		Name = 'SubButton',
-		BackgroundColour = colours.transparent,
-		OnClick = function()
-			self:ShiftValue(1)
-		end
-	})
-
-	self:AddObject({
-		X = 1,
-		Y = 1,
-		Width = self.Width - 2,
-		Text = tostring(self.Value),
-		Align = 'Center',
-		Type = 'TextBox',
-		BackgroundColour = colours.transparent,
-		OnChange = function(_self, event, keychar)
-			if keychar == keys.enter then
-				self:SetValue(tonumber(_self.Text))
-				self.TextBoxTimer = nil
-			end
-			if self.TextBoxTimer then
-				self.Bedrock:StopTimer(self.TextBoxTimer)
-			end
-
-			self.TextBoxTimer = self.Bedrock:StartTimer(function(_, timer)
-				if timer and timer == self.TextBoxTimer then
-					self:SetValue(tonumber(_self.Text))
-					self.TextBoxTimer = nil
-				end
-			end, 2)
-		end
-	})
-end
-
-OnScroll = function(self, event, dir, x, y)
-	self:ShiftValue(-dir)
-end
-
-ShiftValue = function(self, delta)
-	local val = tonumber(self:GetObject('TextBox').Text) or self.Minimum
-	self:SetValue(val + delta)
-end
-
-SetValue = function(self, newValue)
-	newValue = newValue or 0
-	if self.Maximum and newValue > self.Maximum then
-		newValue = self.Maximum
-	elseif self.Minimum and newValue < self.Minimum then
-		newValue = self.Minimum
-	end
-	self.Value = newValue
-	if self.OnChange then
-		self:OnChange()
-	end
-end
-
-OnUpdate = function(self, value)
-	if value == 'Value' then
-		local textbox = self:GetObject('TextBox')
-		if textbox then
-			textbox.Text = tostring(self.Value)
-		end
-	end
 end
 ]],
 ["ProgressBar"] = [[
@@ -1928,15 +1212,12 @@ OnDraw = function(self, x, y)
 		if type(barColours) == 'number' then
 			barColours = {barColours}
 		end
-
 		local total = 0
 		local _x = x
 		for i, v in ipairs(values) do
-			local width = (v == 0 and 0 or self.Bedrock.Helpers.Round((v / self.Maximum) * self.Width))
+			local width = self.Bedrock.Helpers.Round((v / self.Maximum) * self.Width)
 			total = total + v
-			if width ~= 0 then
-				Drawing.DrawBlankArea(_x, y, width, self.Height, barColours[((i-1)%#barColours)+1])
-			end
+			Drawing.DrawBlankArea(_x, y, width, self.Height, barColours[((i-1)%#barColours)+1])
 			_x = _x + width
 		end
 
@@ -1992,29 +1273,26 @@ OnScroll = function(self, event, direction, x, y)
 	end
 end
 
--- TODO: this really needs an overhaul
 OnClick = function(self, event, side, x, y)
 	if event == 'mouse_click' then
 		self.ClickPoint = y
 	else
-		if self.ClickPoint then
-			local gapHeight = self.Height - (self.Height * (self.Height / (self.Height + self.MaxScroll)))
-			local barHeight = self.Height * (self.Height / (self.Height + self.MaxScroll))
-			--local delta = (self.Height + self.MaxScroll) * ((y - self.ClickPoint) / barHeight)
-			local delta = ((y - self.ClickPoint)/gapHeight)*self.MaxScroll
-			--l(((y - self.ClickPoint)/gapHeight))
-			--l(delta)
-			self.Scroll = self.Bedrock.Helpers.Round(delta)
-			--l(self.Scroll)
-			--l('----')
-			if self.Scroll < 0 then
-				self.Scroll = 0
-			elseif self.Scroll > self.MaxScroll then
-				self.Scroll = self.MaxScroll
-			end
-			if self.OnChange then
-				self:OnChange()
-			end
+		local gapHeight = self.Height - (self.Height * (self.Height / (self.Height + self.MaxScroll)))
+		local barHeight = self.Height * (self.Height / (self.Height + self.MaxScroll))
+		--local delta = (self.Height + self.MaxScroll) * ((y - self.ClickPoint) / barHeight)
+		local delta = ((y - self.ClickPoint)/gapHeight)*self.MaxScroll
+		--l(((y - self.ClickPoint)/gapHeight))
+		--l(delta)
+		self.Scroll = self.Bedrock.Helpers.Round(delta)
+		--l(self.Scroll)
+		--l('----')
+		if self.Scroll < 0 then
+			self.Scroll = 0
+		elseif self.Scroll > self.MaxScroll then
+			self.Scroll = self.MaxScroll
+		end
+		if self.OnChange then
+			self:OnChange()
 		end
 	end
 
@@ -2086,10 +1364,7 @@ UpdateScroll = function(self)
 				end
 			end
 		end
-
-		if self:GetObject('ScrollViewScrollBar') then
-			self:GetObject('ScrollViewScrollBar').MaxScroll = self.ContentHeight - self.Height
-		end
+		self:GetObject('ScrollViewScrollBar').MaxScroll = self.ContentHeight - self.Height
 	else
 		self:RemoveObject('ScrollViewScrollBar')
 	end
@@ -2105,7 +1380,6 @@ OnLoad = function(self)
 	if not self.ChildOffset or not self.ChildOffset.X or not self.ChildOffset.Y then
 		self.ChildOffset = {X = 0, Y = 0}
 	end
-	self:UpdateScroll()
 end
 ]],
 ["SecureTextBox"] = [[
@@ -2157,15 +1431,11 @@ end
 ]],
 ["Separator"] = [[
 Colour = colours.grey
-Character = nil
 
 OnDraw = function(self, x, y)
-	local char = self.Character
-	if not char then
-		char = "|"
-		if self.Width > self.Height then
-			char = '-'
-		end
+	local char = "|"
+	if self.Width > self.Height then
+		char = '-'
 	end
 	Drawing.DrawArea(x, y, self.Width, self.Height, char, self.Colour, colours.transparent)
 end
@@ -2208,10 +1478,10 @@ OnDraw = function(self, x, y)
 	end
 
 	if #tostring(text) == 0 then
-		self:DrawPlaceholder(x + 1, y)
+		Drawing.DrawCharacters(x + 1, y, self.Placeholder, self.PlaceholderTextColour, self.BackgroundColour)
 	else
 		if not self.Selected then
-			self:DrawText(x + 1, y, text)
+			Drawing.DrawCharacters(x + 1, y, text, self.TextColour, self.BackgroundColour)
 		else
 			local startPos = self.DragStart - offset
 			local endPos = self.CursorPos - offset
@@ -2219,30 +1489,18 @@ OnDraw = function(self, x, y)
 				startPos = self.CursorPos - offset
 				endPos = self.DragStart - offset
 			end
-			self:DrawSelectedText(x, y, text, startPos, endPos)
+			for i = 1, #text do
+				local char = text:sub(i, i)
+				local textColour = self.TextColour
+				local backgroundColour = self.BackgroundColour
+
+				if i > startPos and i - 1 <= endPos then
+					textColour = self.SelectedTextColour
+					backgroundColour = self.SelectedBackgroundColour
+				end
+				Drawing.DrawCharacters(x + i, y, char, textColour, backgroundColour)
+			end
 		end
-	end
-end
-
-DrawText = function(self, x, y, text)
-	Drawing.DrawCharacters(x, y, text, self.TextColour, self.BackgroundColour)
-end
-
-DrawPlaceholder = function(self, x, y)
-	Drawing.DrawCharacters(x, y, self.Placeholder, self.PlaceholderTextColour, self.BackgroundColour)
-end
-
-DrawSelectedText = function(self, x, y, text, startPos, endPos)
-	for i = 1, #text do
-		local char = text:sub(i, i)
-		local textColour = self.TextColour
-		local backgroundColour = self.BackgroundColour
-
-		if i > startPos and i - 1 <= endPos then
-			textColour = self.SelectedTextColour
-			backgroundColour = self.SelectedBackgroundColour
-		end
-		Drawing.DrawCharacters(x + i, y, char, textColour, backgroundColour)
 	end
 end
 
@@ -2292,51 +1550,25 @@ OnDrag = function(self, event, side, x, y)
 	end
 end
 
-OnPaste = function(self, event, text)
-	self:DeleteSelected()
-	if self.Numerical then
-		text = tostring(tonumber(text))
-		if text == 'nil' then
-			return
-		end
-	end
-	self.Text = string.sub(self.Text, 1, self.CursorPos ) .. text .. string.sub( self.Text, self.CursorPos + #text )
-	if self.Numerical then
-		self.Text = tostring(tonumber(self.Text))
-		if self.Text == 'nil' then
-			self.Text = '1'
-		end
-	end
-	
-	self.CursorPos = self.CursorPos + #text
-	if self.OnChange then
-		self:OnChange(event, text)
-	end
-end
-
-DeleteSelected = function(self)
-	if self.Selected then
-		local startPos = self.DragStart
-		local endPos = self.CursorPos
-		if startPos > endPos then
-			startPos = self.CursorPos
-			endPos = self.DragStart
-		end
-		self.Text = self.Text:sub(1, startPos) .. self.Text:sub(endPos + 2)
-		self.CursorPos = startPos
-		self.DragStart = nil
-		self.Selected = false
-		return true
-	end
-end
-
 OnKeyChar = function(self, event, keychar)
+	local deleteSelected = function()
+		if self.Selected then
+			local startPos = self.DragStart
+			local endPos = self.CursorPos
+			if startPos > endPos then
+				startPos = self.CursorPos
+				endPos = self.DragStart
+			end
+			self.Text = self.Text:sub(1, startPos) .. self.Text:sub(endPos + 2)
+			self.CursorPos = startPos
+			self.DragStart = nil
+			self.Selected = false
+			return true
+		end
+	end
 
-	if self.CustomOnKeyChar and self:CustomOnKeyChar(event, keychar) then
-		self:OnChange(event, keychar)
-		return
-	elseif event == 'char' then
-		self:DeleteSelected()
+	if event == 'char' then
+		deleteSelected()
 		if self.Numerical then
 			keychar = tostring(tonumber(keychar))
 		end
@@ -2393,7 +1625,7 @@ OnKeyChar = function(self, event, keychar)
 		
 		elseif keychar == keys.backspace then
 			-- Backspace
-			if not self:DeleteSelected() and self.CursorPos > 0 then
+			if not deleteSelected() and self.CursorPos > 0 then
 				self.Text = string.sub( self.Text, 1, self.CursorPos - 1 ) .. string.sub( self.Text, self.CursorPos + 1 )
 				self.CursorPos = self.CursorPos - 1					
 				if self.Numerical then
@@ -2413,7 +1645,7 @@ OnKeyChar = function(self, event, keychar)
 				self:OnChange(event, keychar)
 			end
 		elseif keychar == keys.delete then
-			if not self:DeleteSelected() and self.CursorPos < string.len(self.Text) then
+			if not deleteSelected() and self.CursorPos < string.len(self.Text) then
 				self.Text = string.sub( self.Text, 1, self.CursorPos ) .. string.sub( self.Text, self.CursorPos + 2 )		
 				if self.Numerical then
 					self.Text = tostring(tonumber(self.Text))
@@ -2545,20 +1777,7 @@ local function findObjectNamed(view, name, minI)
 	end
 end
 
-function ReorderObjects(self)
-	if self.Children then
-		table.sort(self.Children, function(a,b)
-			return a.Z < b.Z 
-		end)
-		for i, v in ipairs(self.Children) do
-			if v.ReorderObjects then
-				v:ReorderObjects()
-			end
-		end
-	end
-end
-
-function AddObject(self, info, extra, first)
+function AddObject(self, info, extra)
 	if type(info) == 'string' then
 		local h = fs.open(self.Bedrock.ViewPath..info..'.view', 'r')
 		if h then
@@ -2579,18 +1798,10 @@ function AddObject(self, info, extra, first)
 
 	local view = self.Bedrock:ObjectFromFile(info, self)
 	if not view.Z then
-		if first then
-			view.Z = 1
-		else
-			view.Z = #self.Children + 1
-		end
+		view.Z = #self.Children + 1
 	end
 	
-	if first then
-		table.insert(self.Children, 1, view)
-	else
-		table.insert(self.Children, view)
-	end
+	table.insert(self.Children, view)
 	if self.Bedrock.View then
 		self.Bedrock:ReorderObjects()
 	end
@@ -2666,6 +1877,10 @@ CanClose = true
 OnCloseButton = nil
 OldActiveObject = nil
 
+OnLoad = function(self)
+	--self:GetObject('View') = self.Bedrock:ObjectFromFile({Type = 'View',Width = 10, Height = 5, BackgroundColour = colours.red}, self)
+end
+
 LoadView = function(self)
 	local view = self:GetObject('View')
 	if view.ToolBarColour then
@@ -2700,7 +1915,7 @@ Flash = function(self)
 end
 
 OnDraw = function(self, x, y)
-	local toolBarColour = (self.Flashing and colours.grey or self.ToolBarColour)
+	local toolBarColour = (self.Flashing and colours.white or self.ToolBarColour)
 	local toolBarTextColour = (self.Flashing and colours.black or self.ToolBarTextColour)
 	if toolBarColour then
 		Drawing.DrawBlankArea(x, y, self.Width, 1, toolBarColour)
@@ -2745,8 +1960,32 @@ OnUpdate = function(self, value)
 end
 ]],
 }
+
 BasePath = ''
 ProgramPath = nil
+
+-- Program functions...
+
+local function main(...)
+	-- Code here...
+end
+
+-- Run
+local args = {...}
+local _, err = pcall(function() main(unpack(args)) end)
+if err then
+	-- Make a nice error handling screen here...
+	term.setBackgroundColor(colors.black)
+	term.setTextColor(colors.white)
+	term.clear()
+	term.setCursorPos(1, 3)
+	print(" An Error Has Occured! D:\n\n")
+	print(" " .. tostring(err) .. "\n\n")
+	print(" Press any key to exit...")
+	os.pullEvent("key")
+end
+
+
 
 function LoadAPIs(self)
 	local function loadAPI(name, content)
@@ -2773,11 +2012,6 @@ function LoadAPIs(self)
 				if objects[env[name].Inherit] then
 					loadObject(env[name].Inherit, objects[env[name].Inherit])
 				elseif fs.exists(self.ProgramPath..'/Objects/'..env[name].Inherit..'.lua') then
-					local h = fs.open(self.ProgramPath..'/Objects/'..env[name].Inherit..'.lua', 'r')
-					loadObject(env[name].Inherit, h.readAll())
-					h.close()
-					loadObject(name, content)
-					return
 				end
 			end
 			env[name].__index = getfenv()[env[name].Inherit]
@@ -2802,21 +2036,9 @@ function LoadAPIs(self)
 	if fs.exists(privateObjPath) and fs.isDir(privateObjPath) then
 		for i, v in ipairs(fs.list(privateObjPath)) do
 			if v ~= '.DS_Store' then
-				local name = string.match(v, '(%w+)%.?.-')
+				local name = string.match(v, '(%a+)%.?.-')
 				local h = fs.open(privateObjPath..v, 'r')
 				loadObject(name, h.readAll())
-				h.close()
-			end
-		end
-	end
-	
-	local privateAPIPath = self.ProgramPath..'/APIs/'
-	if fs.exists(privateAPIPath) and fs.isDir(privateAPIPath) then
-		for i, v in ipairs(fs.list(privateAPIPath)) do
-			if v ~= '.DS_Store' then
-				local name = string.match(v, '(%w+)%.?.-')
-				local h = fs.open(privateAPIPath..v, 'r')
-				loadAPI(name, h.readAll())
 				h.close()
 			end
 		end
@@ -2839,8 +2061,6 @@ Running = true
 
 DefaultView = 'main'
 
-AnimationEnabled = true
-
 EventHandlers = {
 	
 }
@@ -2856,12 +2076,6 @@ ObjectUpdateHandlers = {
 Timers = {
 	
 }
-
-ModifierKeys = {}
-KeyboardShortcuts = {}
-
-keys.leftCommand = 219
-keys.rightCommand = 220
 
 function Initialise(self, programPath)
 	self.ProgramPath = programPath or self.ProgramPath
@@ -2903,15 +2117,15 @@ function Initialise(self, programPath)
 end
 
 function HandleClick(self, event, side, x, y)
-	if self.Menu then
-		if not self.View:DoClick(self.Menu, event, side, x, y) then
-			self.Menu:Close()
-		end
-	elseif self.Window then
+	if self.Window then
 		if not self.View:CheckClick(self.Window, x, y) then
 			self.Window:Flash()
 		else
 			self.View:DoClick(self.Window, event, side, x, y)
+		end
+	elseif self.Menu then
+		if not self.View:DoClick(self.Menu, event, side, x, y) then
+			self.Menu:Close()
 		end
 	elseif self.View then
 		if self.View:Click(event, side, x, y) ~= false then
@@ -2919,74 +2133,7 @@ function HandleClick(self, event, side, x, y)
 	end
 end
 
-function UnregisterKeyboardShortcut(self, name)
-	if name then
-		self.KeyboardShortcuts[name] = nil
-	end
-end
-
-function RegisterKeyboardShortcut(self, keys, func, name)
-	name = name or tostring(math.random(1, 10000))
-	if type(keys[1]) == 'table' then
-		for i, v in ipairs(keys) do
-			self.KeyboardShortcuts[name] = {Keys = v, Function = func}
-		end
-	else
-		self.KeyboardShortcuts[name] = {Keys = keys, Function = func}
-	end
-	return name
-end
-
-function TryKeyboardShortcuts(self, keychar)
-	if keychar == keys.backspace then
-		keychar = keys.delete
-	end
-
-	local len = 1 -- + keychar
-	for k, v in pairs(self.ModifierKeys) do
-		len = len + 1
-	end
-
-	if type(keychar) == 'string' then
-		keychar = keychar:lower()
-	end
-
-	for _, shortcut in pairs(self.KeyboardShortcuts) do
-		local match = true
-		for i2, key in ipairs(shortcut.Keys) do
-			if type(keychar) == 'string' then
-				keychar = keychar:lower()
-			end
-
-			if self.ModifierKeys[key] == nil and key ~= keychar  then
-				match = false
-			end
-		end
-
-		if match and #shortcut.Keys == len then
-			return shortcut.Function() ~= false
-		end
-	end
-end
-
 function HandleKeyChar(self, event, keychar)
-	if keychar == keys.leftCtrl or keychar == keys.leftShift or keychar == keys.leftAlt or keychar == keys.leftCommand or keychar == keys.rightCommand or keychar == keys.rightCtrl or keychar == keys.rightShift or keychar == keys.rightAlt then
-		if keychar == keys.leftCommand or keychar == keys.rightCommand or keychar == keys.rightCtrl then
-			keychar = keys.leftCtrl
-		elseif keychar == keys.rightAlt then
-			keychar = keys.leftAlt
-		elseif keychar == keys.rightShift then
-			keychar = keys.leftShift
-		end
-		self.ModifierKeys[keychar] = self:StartTimer(function(_, timer)
-			if timer == self.ModifierKeys[keychar] then
-				self.ModifierKeys[keychar] = nil
-			end
-		end, 1)
-	elseif self:TryKeyboardShortcuts(keychar) then
-		return
-	end
-
 	if self:GetActiveObject() then
 		local activeObject = self:GetActiveObject()
 		if activeObject.OnKeyChar then
@@ -2995,15 +2142,6 @@ function HandleKeyChar(self, event, keychar)
 			end
 		end
 	end
-end
-
-PreparedMenus = {}
-
-function PrepareMenu(self, name)
-	local menu = self:AddObject(name, {Type = 'Menu', X = 1, Y = 1, Prepared = true})
-	menu.Visible = false
-	self.PreparedMenus[name] = menu
-	return menu
 end
 
 function ToggleMenu(self, name, owner, x, y)
@@ -3024,17 +2162,7 @@ function SetMenu(self, menu, owner, x, y)
 	end	
 	if menu then
 		local pos = owner:GetPosition()
-		if self.PreparedMenus[menu] then
-			self.Menu = self.PreparedMenus[menu]
-			self.Menu.Visible = true
-			self.Menu.Owner = owner
-			self.Menu.X = pos.X + x - 1
-			self.Menu.Y = pos.Y + y
-			self.Menu.Z = self.View.Children[#self.View.Children].Z + 1
-			self:ReorderObjects()
-		else
-			self.Menu = self:AddObject(menu, {Type = 'Menu', Owner = owner, X = pos.X + x - 1, Y = pos.Y + y, Z = self.View.Children[#self.View.Children].Z + 1})
-		end
+		self.Menu = self:AddObject(menu, {Type = 'Menu', Owner = owner, X = pos.X + x - 1, Y = pos.Y + y})
 	end
 end
 
@@ -3083,12 +2211,6 @@ function LoadView(self, name, draw)
 		self.View:OnRemove()
 	end
 	local success = false
-
-	if Drawing.Screen.Width <= 26 and fs.exists(self.ViewPath..name..'-pocket.view') then
-		name = name..'-pocket'
-	elseif Drawing.Screen.Width <= 39 and fs.exists(self.ViewPath..name..'-turtle.view') then
-		name = name..'-turtle'
-	end
 
 	if not fs.exists(self.ViewPath..name..'.view') then
 		error('The view: '..name..'.view does not exist.')
@@ -3151,27 +2273,27 @@ function InheritFile(self, file, name)
 end
 
 function ParseStringSize(self, parent, k, v)
-	local parentSize = parent.Width
-	if k == 'Height' or k == 'Y' then
-		parentSize = parent.Height
-	end
-	local parts = {v}
-	if type(v) == 'string' and string.find(v, ',') then
-		parts = {}
-		for word in string.gmatch(v, '([^,]+)') do
-		    table.insert(parts, word)
+		local parentSize = parent.Width
+		if k == 'Height' or k == 'Y' then
+			parentSize = parent.Height
 		end
-	end
+		local parts = {v}
+		if type(v) == 'string' and string.find(v, ',') then
+			parts = {}
+			for word in string.gmatch(v, '([^,]+)') do
+			    table.insert(parts, word)
+			end
+		end
 
-	v = 0
-	for i2, part in ipairs(parts) do
-		if type(part) == 'string' and part:sub(#part) == '%' then
-			v = v + math.ceil(parentSize * (tonumber(part:sub(1, #part-1)) / 100))
-		else
-			v = v + tonumber(part)
+		v = 0
+		for i2, part in ipairs(parts) do
+			if type(part) == 'string' and part:sub(#part) == '%' then
+				v = v + math.ceil(parentSize * (tonumber(part:sub(1, #part-1)) / 100))
+			else
+				v = v + tonumber(part)
+			end
 		end
-	end
-	return v
+		return v
 end
 
 function ObjectFromFile(self, file, view)
@@ -3242,7 +2364,6 @@ function ObjectFromFile(self, file, view)
 		if object.OnLoad then
 			object:OnLoad()
 		end
-		object.Ready = true
 		return object
 	elseif not file.Type then
 		error('No object type specified. (e.g. Type = "Button")')
@@ -3253,12 +2374,14 @@ end
 
 function ReorderObjects(self)
 	if self.View and self.View.Children then
-		self.View:ReorderObjects()
+		table.sort(self.View.Children, function(a,b)
+			return a.Z < b.Z 
+		end)
 	end
 end
 
-function AddObject(self, info, extra, first)
-	return self.View:AddObject(info, extra, first)
+function AddObject(self, info, extra)
+	return self.View:AddObject(info, extra)
 end
 
 function GetObject(self, name)
@@ -3277,24 +2400,13 @@ function RemoveObjects(self, name)
 	return self.View:RemoveObjects(name)
 end
 
-DrawEvent = nil
-
-function HandleDraw(self, event, id)
-	if id == self.DrawEvent then
-		self.DrawEvent = nil
-		self:Draw()
-	end
-end
-
 function ForceDraw(self)
-	if not self.DrawEvent then--or self.DrawTimerExpiry <= os.clock() then
-		self.DrawEvent = math.random()
-		os.queueEvent('bedrock_draw', self.DrawEvent)
-		-- self:StartTimer(function()
-		-- 	self.DrawTimer = nil
-		-- 	self:Draw()
-		-- end, 0.05)
-		-- self.DrawTimerExpiry = os.clock() + 0.1
+	if not self.DrawTimer or self.DrawTimerExpiry <= os.clock() then
+		self.DrawTimer = self:StartTimer(function()
+			self.DrawTimer = nil
+			self:Draw()
+		end, 0.05)
+		self.DrawTimerExpiry = os.clock() + 0.1
 	end
 end
 
@@ -3313,7 +2425,6 @@ function DisplayWindow(self, _view, title, canClose)
 	self.Window = self:AddObject({Type = 'Window', Z = 999, Title = title, CanClose = canClose})
 	_view.Type = 'View'
 	_view.Name = 'View'
-	_view.Z = 1
 	_view.BackgroundColour = _view.BackgroundColour or colours.white
 	self.Window:SetView(self:ObjectFromFile(_view, self.Window))
 end
@@ -3377,6 +2488,12 @@ end
 
 function DisplayTextBoxWindow(self, title, text, callback, textboxText, cursorAtEnd)
 	textboxText = textboxText or ''
+	local func = function(btn)
+		self.Window:Close()
+		if callback then
+			callback(btn.Text)
+		end
+	end
 	local children = {
 		{
 			["Y"]="100%,-1",
@@ -3424,7 +2541,7 @@ function DisplayTextBoxWindow(self, title, text, callback, textboxText, cursorAt
 			["Name"]="TextBox",
 			["Type"]="TextBox",
 			["Text"]=textboxText,
-			["CursorPos"]=(cursorAtEnd and #textboxText or 0)
+			["CursorPos"]=(cursorAtEnd and 0 or nil)
 		})
 	local view = {
 		Children = children,
@@ -3432,7 +2549,7 @@ function DisplayTextBoxWindow(self, title, text, callback, textboxText, cursorAt
 		Height=5+height+(canClose and 0 or 1),
 	}
 	self:DisplayWindow(view, title)
-	self.Window:GetObject('TextBox').OnChange = function(txtbox, event, keychar)
+	self.Window:GetObject('TextBox').OnUpdate = function(txtbox, keychar)
 		if keychar == keys.enter then
 			self.Window:Close()
 			callback(true, txtbox.Text)
@@ -3440,28 +2557,6 @@ function DisplayTextBoxWindow(self, title, text, callback, textboxText, cursorAt
 	end
 	self:SetActiveObject(self.Window:GetObject('TextBox'))
 	self.Window.OnCloseButton = function()callback(false)end
-end
-
-local function isFolder(path)
-	local _fs = fs
-	if OneOS then
-		_fs = OneOS.FS
-	end
-	
-	if not _fs.isDir(path) then
-		return false
-	end
-
-	local extension
-	if OneOS and OneOS.System then
-		extension = OneOS.System.RealExtension(path)
-	elseif self.System then
-		extension = self.System.RealExtension(path)
-	else
-		extension = self.Helpers.Extension(path)
-	end
-
-	return extension == ''
 end
 
 function DisplayOpenFileWindow(self, title, callback)
@@ -3477,28 +2572,16 @@ function DisplayOpenFileWindow(self, title, callback)
 
 	--this is a really, really super bad way of doing it
 	local separator = '                               !'
-	
-	local _fs = fs
-	if OneOS then
-		_fs = OneOS.FS
-	end
 
 	local function addFolder(path, level)
-		for i, v in ipairs(_fs.list(path)) do
+		for i, v in ipairs(fs.list(path)) do
 			local fPath = path .. '/' .. v
-			if fPath ~= '/rom' and fPath ~= '/Favourites' and fPath ~= '/.git' and _fs.isDir(fPath) then
-				if isFolder(fPath) then
-					table.insert(sidebarItems, level .. v..separator..fPath)
-					addFolder(fPath, level .. '  ')
-				end
+			if fPath ~= '/rom' and fs.isDir(fPath) then
+				table.insert(sidebarItems, level .. v..separator..fPath)
+				addFolder(fPath, level .. '  ')
 			end
 		end
 	end
-	
-	if OneOS then
-		_fs = OneOS.FS
-	end
-
 	addFolder('','')
 
 	local currentFolder = ''
@@ -3582,7 +2665,7 @@ function DisplayOpenFileWindow(self, title, callback)
 			["Type"]="Label",
 			["Name"]="PathLabel",
 			["TextColour"]=colours.lightGrey,
-			["Text"]='/'
+			["Text"]='/hello/there'
 		},
 		{
 			["Y"]=2,
@@ -3607,10 +2690,7 @@ function DisplayOpenFileWindow(self, title, callback)
 	local view = {
 		Children = children,
 		Width=40,
-		Height= Drawing.Screen.Height - 4,
-		OnCloseButton=function()
-			callback(false)
-		end
+		Height= Drawing.Screen.Height - 4
 	}
 	self:DisplayWindow(view, title)
 
@@ -3620,8 +2700,8 @@ function DisplayOpenFileWindow(self, title, callback)
 		currentFolder = path
 
 		local filesListItems = {}
-		for i, v in ipairs(_fs.list(path)) do
-			if not isFolder(v .. '/' .. path) then
+		for i, v in ipairs(fs.list(path)) do
+			if not fs.isDir(currentFolder .. v) then
 				table.insert(filesListItems, v)
 			end
 		end
@@ -3631,185 +2711,7 @@ function DisplayOpenFileWindow(self, title, callback)
 
 	end
 
-	if startPath then
-		goToFolder(startPath)
-	elseif OneOS then
-		goToFolder('/Desktop/Documents/')
-	else
-		goToFolder('')
-	end
-
-	self.Window.OnCloseButton = function()callback(false)end
-end
-
-function DisplaySaveFileWindow(self, title, callback, extension, startPath)
-	local _fs = fs
-	if extension and extension:sub(1,1) ~= '.' then
-		extension = '.' .. extension
-	end
-	extension = extension or ''
-
-	title = title or 'Save File'
-	local func = function(btn)
-		self.Window:Close()
-		if callback then
-			callback(btn.Text)
-		end
-	end
-
-	local sidebarItems = {}
-
-	--this is a really, really super bad way of doing it
-	local separator = '                                                       !'
-
-	local function addFolder(path, level)
-		for i, v in ipairs(_fs.list(path)) do
-			local fPath = path .. '/' .. v
-			if fPath ~= '/rom' and fPath ~= '/Favourites' and fPath ~= '/.git' and _fs.isDir(fPath) then
-				if isFolder(fPath) then
-					table.insert(sidebarItems, level .. v..separator..fPath)
-					addFolder(fPath, level .. '  ')
-				end
-			end
-		end
-	end
-	
-	if OneOS then
-		_fs = OneOS.FS
-	end
-	addFolder('','')
-
-	local currentFolder = ''
-	local selectedPath = nil
-
-	local goToFolder = nil
-
-	local function updatePath()
-		local text = self:GetObject('FileNameTextBox').Text
-		if #text == 0 then
-			self.Window:GetObject('OkButton').Enabled = false
-			selectedPath = Helpers.TidyPath(currentFolder)
-		else
-			self.Window:GetObject('OkButton').Enabled = true
-			selectedPath = Helpers.TidyPath(currentFolder .. '/' .. text .. extension)
-		end
-		self:GetObject('PathLabel').Text = selectedPath
-	end
-
-	local children = {
-		{
-			["Y"]="100%,-2",
-			["X"]=1,
-			["Height"]=3,
-			["Width"]="100%",
-			["BackgroundColour"]=colours.lightGrey,
-			["Type"]="View"
-		},
-		{
-			["Y"]="100%,-1",
-			["X"]="100%,-4",
-			["Name"]="OkButton",
-			["Type"]="Button",
-			["Text"]="Ok",
-			["BackgroundColour"]=colours.white,
-			["Enabled"]=false,
-			OnClick = function()
-				if selectedPath then
-					local text = self:GetObject('FileNameTextBox').Text
-					self.Window:Close()
-					callback(true, selectedPath, text)
-				end
-			end
-		},
-		{
-			["Y"]="100%,-1",
-			["X"]="100%,-13",
-			["Name"]="CancelButton",
-			["Type"]="Button",
-			["Text"]="Cancel",
-			["BackgroundColour"]=colours.white,
-			OnClick = function()
-				self.Window:Close()
-				callback(false)
-			end
-		},
-		{
-			["Y"]="100%,-2",
-			["X"]=3,
-			["Width"]="100%,-4",
-			["Name"]="PathLabel",
-			["Type"]="Label",
-			["Text"]="/",
-			["TextColour"]=colours.grey
-		},
-		{
-			["Y"]="100%,-1",
-			["X"]=3,
-			["Width"]="100%,-17",
-			["Name"]="FileNameTextBox",
-			["Type"]="TextBox",
-			["Placeholder"]="File Name",
-			["Active"]=true,
-			["BackgroundColour"]=colours.white,
-			OnChange = function(_self, event, keychar)
-				if keychar == keys.enter then
-					self:GetObject('OkButton'):OnClick()
-				else
-					updatePath()
-				end
-			end
-		},
-		{
-			["Y"]=1,
-			["X"]=2,
-			["Height"]="100%,-3",
-			["Width"]="100%,-1",
-			["Name"]="SidebarListView",
-			["Type"]="ListView",
-			["CanSelect"]=true,
-			["Items"]={
-				["Computer"] = sidebarItems
-			},
-			OnSelect = function(listView, text)
-				local _,s = text:find(separator)
-				if s then
-					local path = text:sub(s + 1)
-					goToFolder(path)
-				end
-			end,
-			OnClick = function(listView, event, side, x, y)
-				if y == 1 then
-					goToFolder('/')
-				end
-			end
-		},
-	}
-	local view = {
-		Children = children,
-		Width=35,
-		Height= Drawing.Screen.Height - 4,
-		OnCloseButton=function()
-			callback(false)
-		end
-	}
-	self:DisplayWindow(view, title)
-
-	self:SetActiveObject(self.Window:GetObject('FileNameTextBox'))
-
-	goToFolder = function(path)
-		path = Helpers.TidyPath(path)
-		currentFolder = path
-		selectedPath = nil
-		updatePath()
-	end
-
-	if startPath then
-		goToFolder(startPath)
-	elseif OneOS then
-		goToFolder('/Desktop/Documents/')
-	else
-		goToFolder('')
-	end
+	goToFolder('')
 
 	self.Window.OnCloseButton = function()callback(false)end
 end
@@ -3856,17 +2758,10 @@ function HandleTimer(self, event, timer)
 			new = self:StartRepeatingTimer(oldTimer[1], oldTimer[3])
 		end
 		if oldTimer and oldTimer[1] then
-			oldTimer[1](new, timer)
+			oldTimer[1](new)
 		end
 	elseif self.OnTimer then
 		self.OnTimer(self, event, timer)
-	end
-end
-
-function HandlePaste(self, event, text)
-	local activeObject = self:GetActiveObject()
-	if activeObject and activeObject.OnPaste then
-		activeObject:OnPaste(event, text)
 	end
 end
 
@@ -3904,9 +2799,7 @@ local eventFuncs = {
 	OnScroll = {'mouse_scroll'},
 	HandleClick = {'mouse_click', 'mouse_drag', 'mouse_scroll', 'monitor_touch'},
 	HandleKeyChar = {'key', 'char'},
-	HandlePaste = {'paste'},
-	HandleTimer = {'timer'},
-	HandleDraw = {'bedrock_draw'}
+	HandleTimer = {'timer'}
 }
 
 local drawCalls = 0
@@ -3927,7 +2820,7 @@ function Draw(self)
 		print('No loaded view. You need to do program:LoadView first.')
 	end	
 
-	if self:GetActiveObject() and self.CursorPos and type(self.CursorPos[1]) == 'number' and type(self.CursorPos[2]) == 'number' and self.CursorPos[1] >= 1 and self.CursorPos[1] <= Drawing.Screen.Width and self.CursorPos[2] >= 1 and self.CursorPos[2] <= Drawing.Screen.Height then
+	if self:GetActiveObject() and self.CursorPos and type(self.CursorPos[1]) == 'number' and type(self.CursorPos[2]) == 'number' then
 		term.setCursorPos(self.CursorPos[1], self.CursorPos[2])
 		term.setTextColour(self.CursorColour)
 		term.setCursorBlink(true)
@@ -3959,22 +2852,6 @@ function Quit(self)
 end
 
 function Run(self, ready)
-	-- Bypass the window API
-	-- This doesn't really work...
-	-- term.redirect(term.native())
-	-- if term.native then
-	-- 	if type(term.native) == 'function' then
-	-- 		term.redirect(term.native())
-	-- 	else
-	-- 		term.redirect(term.native)
-	-- 	end
-	-- end
-	
-	if not  term.isColour or not term.isColour() then
-		print('This program requires an advanced (golden) comptuer to run, sorry.')
-		error('', 0)
-	end
-
 	for name, events in pairs(eventFuncs) do
 		if self[name] then
 			for i, event in ipairs(events) do

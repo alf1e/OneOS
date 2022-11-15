@@ -1,4 +1,4 @@
-sPackage=[[local _fs = fs if OneOS then _fs = OneOS.FS end local pkg=%@1
+sPackage=[[local pkg=%@1
 local function makeFile(_path,_content)
  local file=OneOS.FS.open(_path,"w")
  file.write(_content)
