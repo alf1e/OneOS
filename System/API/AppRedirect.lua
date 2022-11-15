@@ -137,6 +137,12 @@ _term = function(self)
 		end
 	end
 
+	_term.getTextColour = function(colour)
+		return self.TextColour
+	end
+
+	_term.getTextColor = _term.getTextColour
+
 	_term.setTextColor = _term.setTextColour
 
 	_term.setBackgroundColour = function(colour)

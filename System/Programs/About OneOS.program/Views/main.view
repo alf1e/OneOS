@@ -24,7 +24,7 @@
       ["Width"]=32,
       ["Name"]="CopyrightLabel",
       ["Type"]="Label",
-      ["Text"]="(c) Oliver 'alf1e' Cooper 2013-14",
+      ["Text"]="(c) ItsMeAlfie0",
       ["TextColour"]=256,
     },
     [4]={
@@ -42,7 +42,7 @@
       ["Width"]=40,
       ["Name"]="LicenseInfoLabel",
       ["Type"]="Label",
-      ["Text"]="Read the forum post for license details.",
+      ["Text"]="See Github for license Details",
       ["TextColour"]=256,
     },
     [6]={
