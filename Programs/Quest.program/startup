@@ -425,20 +425,7 @@ local function generateClientIdentifier()
 		Height = 4
 	}, "Please Wait", false)
 	program:Draw()
-	local h = http.get('http://quest.net76.net/registerClient.php')
 	program.Window:Close()
-
-	if h then
-		settings.ClientIdentifier = h.readAll()
-		saveSettings()
-		h.close()
-		goHome()
-	else
-		program:DisplayAlertWindow("Register Failed", "Quest couldn't register your computer. There was something wrong with your internet connection. Please quit and try again.", {'Quit'}, function(value)
-			quit()
-		end)
-	end
-
 end
 
 local function loadSettings()
