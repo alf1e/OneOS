@@ -331,16 +331,17 @@ function BootMenu()
 			
 		end},
 		{'Use CraftOS', function()end},
+
 	}
 
 	local selected = 1
 	local function draw()
 		for i, v in ipairs(options) do
-			local bg = colours.black
-			local tc = colours.white
+			local bg = colours.white
+			local tc = colours.blue
 			if i == selected then
-				bg = colours.white
-				tc = colours.black
+				bg = colours.blue
+				tc = colours.white
 			end
 			Drawing.DrawCharactersCenter(nil, math.floor(-#options/2) + i, nil, nil, ' '..v[1]..' ', tc, bg)
 		end
