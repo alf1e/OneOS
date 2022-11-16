@@ -1868,8 +1868,8 @@ end
 ["Window"] = [[
 Inherit = 'View'
 
-ToolBarColour = colours.lightGrey
-ToolBarTextColour = colours.black
+ToolBarColour = colours.black
+ToolBarTextColour = colours.white
 ShadowColour = colours.grey
 Title = ''
 Flashing = false
